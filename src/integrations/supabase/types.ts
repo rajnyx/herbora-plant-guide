@@ -14,7 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      plants: {
+        Row: {
+          ayurvedic_name: string | null
+          category: string
+          common_name: string
+          created_at: string
+          cultivation_information: string | null
+          description: string
+          habitat: string | null
+          id: string
+          image_url: string | null
+          is_published: boolean
+          plant_parts_used: string | null
+          regional_names: string[]
+          safety_information: string
+          scientific_name: string
+          slug: string
+          source_references: Json
+          traditional_uses: string | null
+          updated_at: string
+        }
+        Insert: {
+          ayurvedic_name?: string | null
+          category: string
+          common_name: string
+          created_at?: string
+          cultivation_information?: string | null
+          description: string
+          habitat?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          plant_parts_used?: string | null
+          regional_names?: string[]
+          safety_information: string
+          scientific_name: string
+          slug: string
+          source_references?: Json
+          traditional_uses?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ayurvedic_name?: string | null
+          category?: string
+          common_name?: string
+          created_at?: string
+          cultivation_information?: string | null
+          description?: string
+          habitat?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          plant_parts_used?: string | null
+          regional_names?: string[]
+          safety_information?: string
+          scientific_name?: string
+          slug?: string
+          source_references?: Json
+          traditional_uses?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_saved_plants: {
+        Row: {
+          created_at: string
+          id: string
+          plant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_saved_plants_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
