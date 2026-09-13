@@ -1,0 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
+export type Plant = { id:string; slug:string; common_name:string; scientific_name:string; ayurvedic_name:string|null; regional_names:string[]; category:string; description:string; traditional_uses:string|null; plant_parts_used:string|null; habitat:string|null; cultivation_information:string|null; safety_information:string; image_url:string|null; source_references:{title:string;url:string}[] };
+export async function getPlants() { const {data,error}=await supabase.from("plants").select("*").order("common_name"); if(error) throw error; return (data ?? []) as Plant[]; }
+export async function getPlant(slug:string) { const {data,error}=await supabase.from("plants").select("*").eq("slug",slug).single(); if(error) throw error; return data as Plant; }

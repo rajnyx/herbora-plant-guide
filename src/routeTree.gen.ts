@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PlantopediaRouteImport } from './routes/plantopedia'
+import { Route as PlantsSlugRouteImport } from './routes/plants.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlantopediaRoute = PlantopediaRouteImport.update({
+  id: '/plantopedia',
+  path: '/plantopedia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlantsSlugRoute = PlantsSlugRouteImport.update({
+  id: '/plants/$slug',
+  path: '/plants/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/plantopedia': typeof PlantopediaRoute
+  '/plants/$slug': typeof PlantsSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/plantopedia': typeof PlantopediaRoute
+  '/plants/$slug': typeof PlantsSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/plantopedia': typeof PlantopediaRoute
+  '/plants/$slug': typeof PlantsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/plantopedia' | '/plants/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/plantopedia' | '/plants/$slug'
+  id: '__root__' | '/' | '/plantopedia' | '/plants/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PlantopediaRoute: typeof PlantopediaRoute
+  PlantsSlugRoute: typeof PlantsSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/plantopedia': {
+      id: '/plantopedia'
+      path: '/plantopedia'
+      fullPath: '/plantopedia'
+      preLoaderRoute: typeof PlantopediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plants/$slug': {
+      id: '/plants/$slug'
+      path: '/plants/$slug'
+      fullPath: '/plants/$slug'
+      preLoaderRoute: typeof PlantsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PlantopediaRoute: PlantopediaRoute,
+  PlantsSlugRoute: PlantsSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
