@@ -1,0 +1,211 @@
+import { createClient } from '@supabase/supabase-js';
+
+// Supabase Client initialization
+const SUPABASE_URL = "https://igjmrfwqixvfftbryoyy.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_VwySw5lt7hYiDPtmVCirBQ_6EgvzgKL";
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const API_BASE = '/api';
+
+// --- Supabase Authentication Helpers ---
+
+export async function signUpWithEmail(email, password, fullName = '') {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: fullName }
+    }
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function signInWithEmail(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function signOutUser() {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
+
+export async function getCurrentUser() {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+}
+
+export function subscribeToAuthChanges(callback) {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    callback(session?.user || null);
+  });
+  return () => subscription.unsubscribe();
+}
+
+// --- Backend Flask REST API Helpers ---
+
+export async function fetchPlants(category = 'All', search = '') {
+  try {
+    const params = new URLSearchParams();
+    if (category && category !== 'All') params.append('category', category);
+    if (search) params.append('q', search);
+
+    const res = await fetch(`${API_BASE}/plants?${params.toString()}`);
+    if (!res.ok) throw new Error(`Failed to fetch plants: ${res.statusText}`);
+    return await res.json();
+  } catch (err) {
+    console.error('API Error fetchPlants:', err);
+    // Fallback if backend server not running
+    return [];
+  }
+}
+
+export async function fetchPlantDetails(slugOrId) {
+  try {
+    const res = await fetch(`${API_BASE}/plants/${slugOrId}`);
+    if (!res.ok) throw new Error('Plant not found');
+    return await res.json();
+  } catch (err) {
+    console.error('API Error fetchPlantDetails:', err);
+    throw err;
+  }
+}
+
+export async function searchPlantsLive(q) {
+  if (!q || !q.trim()) return [];
+  try {
+    const res = await fetch(`${API_BASE}/plants/search?q=${encodeURIComponent(q.trim())}`);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchMySavedPlants(userId) {
+  if (!userId) return [];
+  try {
+    const res = await fetch(`${API_BASE}/my-plants?user_id=${encodeURIComponent(userId)}`);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error('API Error fetchMySavedPlants:', err);
+    return [];
+  }
+}
+
+export async function savePlantToDb(plantId, userId, notes = '') {
+  const res = await fetch(`${API_BASE}/plants/${plantId}/save`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': userId || ''
+    },
+    body: JSON.stringify({ user_id: userId, notes })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to save plant');
+  }
+  return await res.json();
+}
+
+export async function removePlantFromDb(plantId, userId) {
+  const res = await fetch(`${API_BASE}/plants/${plantId}/save`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': userId || ''
+    },
+    body: JSON.stringify({ user_id: userId })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to remove plant');
+  }
+  return await res.json();
+}
+
+export async function identifyPlantImage(imageFile, hint = '', userId = null) {
+  const formData = new FormData();
+  if (imageFile) {
+    formData.append('image', imageFile);
+  }
+  if (hint) formData.append('hint', hint);
+  if (userId) formData.append('user_id', userId);
+
+  const res = await fetch(`${API_BASE}/identify`, {
+    method: 'POST',
+    body: formData
+  });
+  if (!res.ok) {
+    throw new Error('Image identification failed');
+  }
+  return await res.json();
+}
+
+export async function sendBotChat(message) {
+  const res = await fetch(`${API_BASE}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message })
+  });
+  if (!res.ok) throw new Error('Chat failed');
+  return await res.json();
+}
+
+export async function fetchDincharya() {
+  const res = await fetch(`${API_BASE}/dincharya`);
+  return await res.json();
+}
+
+export async function fetchRemedies() {
+  const res = await fetch(`${API_BASE}/remedies`);
+  return await res.json();
+}
+
+export async function fetchMyths() {
+  const res = await fetch(`${API_BASE}/myths`);
+  return await res.json();
+}
+
+export async function fetchQuiz() {
+  const res = await fetch(`${API_BASE}/quiz`);
+  return await res.json();
+}
+
+export async function fetchGardenPlants() {
+  const res = await fetch(`${API_BASE}/garden-plants`);
+  return await res.json();
+}
+
+export async function fetchCommunityPosts() {
+  const res = await fetch(`${API_BASE}/posts`);
+  return await res.json();
+}
+
+export async function submitCommunityPost(authorName, plantName, note) {
+  const res = await fetch(`${API_BASE}/posts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ author_name: authorName, plant_name: plantName, note })
+  });
+  if (!res.ok) throw new Error('Post failed');
+  return await res.json();
+}
+
+export async function submitUserFeedback(rating, message) {
+  const res = await fetch(`${API_BASE}/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rating, message })
+  });
+  if (!res.ok) throw new Error('Feedback failed');
+  return await res.json();
+}
