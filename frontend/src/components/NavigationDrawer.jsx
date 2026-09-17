@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Home, BookOpen, Bookmark, Camera, Clock, Sparkles, Sprout, HelpCircle, MessageSquare, Info, LogOut, LogIn } from 'lucide-react';
 
 export default function NavigationDrawer({
@@ -10,10 +10,26 @@ export default function NavigationDrawer({
   onOpenAuth,
   onSignOut
 }) {
+  // Prevent background and home screen scrolling while the menu drawer is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const navItems = [
-    { id: 'home', label: 'Home', icon: Home },
+    { id: 'home', label: 'Home', icon: Home, desc: 'Ayurvedic Discovery Home' },
     { id: 'plantopedia', label: 'Plantopedia', icon: BookOpen, desc: 'Ayurvedic Plant Database' },
     { id: 'my-plants', label: 'My Plant DB', icon: Bookmark, desc: 'Personal Saved Plants' },
     { id: 'identify', label: 'Identify a Plant', icon: Camera, desc: 'AI Botanical Vision' },
@@ -31,7 +47,7 @@ export default function NavigationDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-hidden overscroll-contain">
       {/* Backdrop */}
       <div 
         onClick={onClose}
@@ -39,9 +55,12 @@ export default function NavigationDrawer({
       />
 
       {/* Slide-out panel */}
-      <div className="absolute inset-y-0 left-0 max-w-xs w-full bg-[#FAF7EE] border-r border-[#D2CFBF] shadow-2xl flex flex-col justify-between herbora-rise">
+      <div 
+        className="absolute inset-y-0 left-0 max-w-xs w-full bg-[#FAF7EE] border-r border-[#D2CFBF] shadow-2xl flex flex-col justify-between herbora-rise overscroll-contain"
+        style={{ overscrollBehavior: 'contain' }}
+      >
         {/* Drawer Header */}
-        <div className="p-5 border-b border-[#D2CFBF] flex items-center justify-between">
+        <div className="p-5 border-b border-[#D2CFBF] flex items-center justify-between select-none">
           <div className="flex items-center gap-3">
             <img 
               src="/assets/herbora-logo.png" 
@@ -62,7 +81,10 @@ export default function NavigationDrawer({
         </div>
 
         {/* Navigation list */}
-        <div className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+        <div 
+          className="flex-1 overflow-y-auto py-3 px-3 space-y-1 overscroll-contain"
+          style={{ overscrollBehavior: 'contain' }}
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = currentPage === item.id;

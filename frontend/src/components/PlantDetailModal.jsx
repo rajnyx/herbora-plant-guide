@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Bookmark, BookmarkCheck, ShieldAlert, ExternalLink, Sprout, MapPin, Sun } from 'lucide-react';
 
 export default function PlantDetailModal({ 
@@ -9,6 +9,22 @@ export default function PlantDetailModal({
   currentUser 
 }) {
   const [saving, setSaving] = useState(false);
+
+  // Lock background scroll when plant modal is open
+  useEffect(() => {
+    if (!plant) return;
+
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, [plant]);
 
   if (!plant) return null;
 
@@ -22,7 +38,7 @@ export default function PlantDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain">
       {/* Backdrop */}
       <div 
         onClick={onClose} 
