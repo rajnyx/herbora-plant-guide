@@ -93,7 +93,7 @@ cd frontend
 npm install
 npm run dev
 ```
-- Application opens on `http://localhost:5173` (or `http://localhost:5174`)
+- Application opens on `http://localhost:5173`
 - Communicates with Flask via the Vite proxy (`/api` -> `http://127.0.0.1:5000`).
 
 ---
@@ -116,3 +116,11 @@ npm run dev
 ## ⚖️ Educational & Health Disclaimer
 
 Herbora is an educational and academic digital platform for botanical discovery. Traditional Ayurvedic uses and herbal properties presented on this website are for historical and informational purposes only. They do not constitute medical diagnoses, prescriptions, or clinical treatment plans. Always consult a licensed healthcare practitioner or qualified Ayurvedic doctor before therapeutic use.
+
+---
+
+## 🛠️ Lovable Integration
+
+This project was synchronized with [Lovable](https://lovable.dev).
+
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/8843b9db-8737-4cd3-9326-479f428307fd).
