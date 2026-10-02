@@ -8,44 +8,136 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const API_BASE = '/api';
 
-// --- Supabase Authentication Helpers ---
+// --- Auth State Subscribers ---
+const authSubscribers = new Set();
+function notifyAuthSubscribers(user) {
+  authSubscribers.forEach((cb) => {
+    try { cb(user); } catch (e) { console.error(e); }
+  });
+}
+
+// --- Hybrid Supabase + Local Backend Authentication Helpers ---
 
 export async function signUpWithEmail(email, password, fullName = '') {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { full_name: fullName }
+  // Try Supabase first if available
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName }
+      }
+    });
+    if (error) throw error;
+    if (data?.user) {
+      localStorage.setItem('herbora_user_session', JSON.stringify(data.user));
+      notifyAuthSubscribers(data.user);
+      return data;
     }
+  } catch (supabaseErr) {
+    console.warn("Supabase auth unavailable, using Herbora backend auth:", supabaseErr.message);
+  }
+
+  // Fallback to Herbora backend auth
+  const res = await fetch(`${API_BASE}/auth/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, full_name: fullName })
   });
-  if (error) throw error;
-  return data;
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(json.error || 'Failed to create account');
+  }
+  localStorage.setItem('herbora_user_session', JSON.stringify(json.user));
+  notifyAuthSubscribers(json.user);
+  return { user: json.user, session: null };
 }
 
 export async function signInWithEmail(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
+  // Try Supabase first if available
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    if (error) throw error;
+    if (data?.user) {
+      localStorage.setItem('herbora_user_session', JSON.stringify(data.user));
+      notifyAuthSubscribers(data.user);
+      return data;
+    }
+  } catch (supabaseErr) {
+    console.warn("Supabase auth unavailable, using Herbora backend auth:", supabaseErr.message);
+  }
+
+  // Fallback to Herbora backend auth
+  const res = await fetch(`${API_BASE}/auth/signin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
   });
-  if (error) throw error;
-  return data;
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(json.error || 'Invalid email or password');
+  }
+  localStorage.setItem('herbora_user_session', JSON.stringify(json.user));
+  notifyAuthSubscribers(json.user);
+  return { user: json.user, session: null };
 }
 
 export async function signOutUser() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  try {
+    await supabase.auth.signOut();
+  } catch (e) {
+    // Supabase unavailable
+  }
+  localStorage.removeItem('herbora_user_session');
+  notifyAuthSubscribers(null);
 }
 
 export async function getCurrentUser() {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      localStorage.setItem('herbora_user_session', JSON.stringify(user));
+      return user;
+    }
+  } catch (e) {
+    // Supabase unavailable
+  }
+
+  const stored = localStorage.getItem('herbora_user_session');
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 export function subscribeToAuthChanges(callback) {
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-    callback(session?.user || null);
-  });
-  return () => subscription.unsubscribe();
+  authSubscribers.add(callback);
+
+  // Also listen to Supabase if active
+  let unsubscribeSupabase = () => {};
+  try {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        localStorage.setItem('herbora_user_session', JSON.stringify(session.user));
+        callback(session.user);
+      }
+    });
+    unsubscribeSupabase = () => subscription.unsubscribe();
+  } catch {
+    // Supabase unavailable
+  }
+
+  return () => {
+    authSubscribers.delete(callback);
+    unsubscribeSupabase();
+  };
 }
 
 // --- Backend Flask REST API Helpers ---

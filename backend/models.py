@@ -128,6 +128,24 @@ class CommunityPost(Base):
         }
 
 
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    email = Column(String(150), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=False)
+    full_name = Column(String(150), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "email": self.email,
+            "full_name": self.full_name,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+
+
 class Feedback(Base):
     __tablename__ = 'user_feedback'
 

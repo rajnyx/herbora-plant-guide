@@ -4,7 +4,8 @@ Provides endpoints for Plantopedia, My Plant DB, AI Plant Identification,
 Ayurvedic Assistant, Dincharya, Remedies, Myths, Quiz, and Community.
 """
 from flask import Blueprint, request, jsonify
-from models import SessionLocal, Plant, UserSavedPlant, IdentificationResult, CommunityPost, Feedback
+from models import SessionLocal, Plant, UserSavedPlant, IdentificationResult, CommunityPost, Feedback, User
+from werkzeug.security import generate_password_hash, check_password_hash
 from services.plant_identifier import identify_plant_image, AYURVEDIC_BOTANICAL_SIGNATURES
 import uuid
 
@@ -478,6 +479,73 @@ def handle_feedback():
         db.add(fb)
         db.commit()
         return jsonify({"message": "Thank you for your valuable feedback on Herbora!"}), 201
+    finally:
+        db.close()
+
+@api_bp.route('/auth/signup', methods=['POST'])
+def auth_signup():
+    data = request.get_json(silent=True) or {}
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '').strip()
+    full_name = data.get('full_name', '').strip()
+
+    if not email or '@' not in email:
+        return jsonify({"error": "A valid email address is required"}), 400
+    if not password or len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
+
+    db = SessionLocal()
+    try:
+        existing = db.query(User).filter(User.email == email).first()
+        if existing:
+            return jsonify({"error": "An account with this email already exists. Please sign in."}), 400
+
+        pw_hash = generate_password_hash(password)
+        new_user = User(
+            email=email,
+            password_hash=pw_hash,
+            full_name=full_name or email.split('@')[0]
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return jsonify({
+            "message": "Account created successfully",
+            "user": new_user.to_dict()
+        }), 201
+    finally:
+        db.close()
+
+@api_bp.route('/auth/signin', methods=['POST'])
+def auth_signin():
+    data = request.get_json(silent=True) or {}
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '').strip()
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user or not check_password_hash(user.password_hash, password):
+            return jsonify({"error": "Invalid email or password"}), 401
+
+        return jsonify({
+            "message": "Signed in successfully",
+            "user": user.to_dict()
+        }), 200
+    finally:
+        db.close()
+
+@api_bp.route('/auth/user/<user_id>', methods=['GET'])
+def auth_get_user(user_id):
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        return jsonify({"user": user.to_dict()}), 200
     finally:
         db.close()
 

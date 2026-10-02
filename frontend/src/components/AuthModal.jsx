@@ -49,12 +49,21 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
     try {
       if (isSignUp) {
-        await signUpWithEmail(email, password, fullName);
-        setSuccessMsg('Account created successfully! You can now log in.');
-        setIsSignUp(false);
+        const data = await signUpWithEmail(email, password, fullName);
+        setSuccessMsg('Account created successfully! You are now signed in.');
+        if (data?.user && onAuthSuccess) {
+          onAuthSuccess(data.user);
+          setTimeout(() => {
+            onClose();
+          }, 800);
+        } else {
+          setIsSignUp(false);
+        }
       } else {
         const data = await signInWithEmail(email, password);
-        onAuthSuccess(data.user);
+        if (data?.user && onAuthSuccess) {
+          onAuthSuccess(data.user);
+        }
         onClose();
       }
     } catch (err) {
