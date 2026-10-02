@@ -282,13 +282,24 @@ export async function fetchCommunityPosts() {
   return await res.json();
 }
 
-export async function submitCommunityPost(authorName, plantName, note) {
+export async function submitCommunityPost(authorName, plantName, note, userId = null) {
   const res = await fetch(`${API_BASE}/posts`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ author_name: authorName, plant_name: plantName, note })
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-User-Id': userId || ''
+    },
+    body: JSON.stringify({ 
+      author_name: authorName, 
+      plant_name: plantName, 
+      note,
+      user_id: userId
+    })
   });
-  if (!res.ok) throw new Error('Post failed');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to submit post');
+  }
   return await res.json();
 }
 

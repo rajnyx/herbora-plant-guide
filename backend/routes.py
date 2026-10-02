@@ -445,6 +445,12 @@ def handle_posts():
     try:
         if request.method == 'POST':
             data = request.get_json(silent=True) or {}
+            user_id = data.get('user_id') or request.headers.get('X-User-Id')
+            
+            # Enforce that only logged-in users can post
+            if not user_id:
+                return jsonify({"error": "Please log in to share your post with the community"}), 401
+
             author = data.get('author_name', 'Botanical Explorer').strip()
             plant = data.get('plant_name', 'Ayurvedic Herb').strip()
             note = data.get('note', '').strip()

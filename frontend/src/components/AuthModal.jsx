@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, LogIn, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 import { signInWithEmail, signUpWithEmail } from '../services/api';
 
-export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
-  const [isSignUp, setIsSignUp] = useState(false);
+export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialSignUp = false }) {
+  const [isSignUp, setIsSignUp] = useState(initialSignUp);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -11,6 +11,19 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Reset form whenever modal opens or initialSignUp changes
+  useEffect(() => {
+    if (isOpen) {
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setFullName('');
+      setErrorMsg('');
+      setSuccessMsg('');
+      setIsSignUp(initialSignUp);
+    }
+  }, [isOpen, initialSignUp]);
 
   // Lock background scroll when auth modal is open
   useEffect(() => {
@@ -29,6 +42,24 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const handleClose = () => {
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setFullName('');
+    setErrorMsg('');
+    setSuccessMsg('');
+    onClose();
+  };
+
+  const switchMode = (signUp) => {
+    setIsSignUp(signUp);
+    setPassword('');
+    setConfirmPassword('');
+    setErrorMsg('');
+    setSuccessMsg('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,17 +85,17 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         if (data?.user && onAuthSuccess) {
           onAuthSuccess(data.user);
           setTimeout(() => {
-            onClose();
+            handleClose();
           }, 800);
         } else {
-          setIsSignUp(false);
+          switchMode(false);
         }
       } else {
         const data = await signInWithEmail(email, password);
         if (data?.user && onAuthSuccess) {
           onAuthSuccess(data.user);
         }
-        onClose();
+        handleClose();
       }
     } catch (err) {
       setErrorMsg(err.message || 'Authentication failed. Please check your credentials.');
@@ -77,23 +108,23 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        onClick={onClose} 
+        onClick={handleClose} 
         className="fixed inset-0 bg-[#174B2B]/40 backdrop-blur-xs transition-opacity" 
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-md bg-[#FAF8F2] border border-[#E2DDD0] rounded-2xl shadow-2xl p-6 sm:p-8 herbora-rise z-10">
+      <div className="relative w-full max-w-md bg-[#FAF7EE] border border-[#D2CFBF] rounded-3xl shadow-2xl p-6 sm:p-8 herbora-rise z-10">
         {/* Close Button */}
         <button 
-          onClick={onClose}
-          className="absolute top-5 right-5 w-8 h-8 rounded-lg flex items-center justify-center text-[#556B5D] hover:bg-[#EDE6D5] transition-colors"
+          onClick={handleClose}
+          className="absolute top-5 right-5 w-8 h-8 rounded-xl flex items-center justify-center text-[#556B5D] hover:bg-[#E8E0CF] transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-full bg-[#DDE5C9] border border-[#8DA56B] flex items-center justify-center mx-auto mb-3 text-[#174B2B]">
+          <div className="w-12 h-12 rounded-full bg-[#D8E1C3] border border-[#8DA56B] flex items-center justify-center mx-auto mb-3 text-[#174B2B]">
             {isSignUp ? <UserPlus className="w-6 h-6" /> : <LogIn className="w-6 h-6" />}
           </div>
           <h2 className="font-serif text-3xl font-bold text-[#174B2B]">
@@ -122,7 +153,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         )}
 
         {/* Auth Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           {isSignUp && (
             <div>
               <label className="block text-xs font-semibold text-[#174B2B] uppercase tracking-wider mb-1">
@@ -136,7 +167,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Your Name"
-                  className="w-full h-11 pl-10 pr-3 rounded-xl bg-white border border-[#E2DDD0] text-sm text-[#174B2B] outline-none focus:border-[#285D36]"
+                  className="w-full h-11 pl-10 pr-3 rounded-xl bg-white border border-[#D2CFBF] text-sm text-[#174B2B] outline-none focus:border-[#285D36]"
                 />
               </div>
             </div>
@@ -154,7 +185,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full h-11 pl-10 pr-3 rounded-xl bg-white border border-[#E2DDD0] text-sm text-[#174B2B] outline-none focus:border-[#285D36]"
+                className="w-full h-11 pl-10 pr-3 rounded-xl bg-white border border-[#D2CFBF] text-sm text-[#174B2B] outline-none focus:border-[#285D36]"
               />
             </div>
           </div>
@@ -171,7 +202,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full h-11 pl-10 pr-3 rounded-xl bg-white border border-[#E2DDD0] text-sm text-[#174B2B] outline-none focus:border-[#285D36]"
+                className="w-full h-11 pl-10 pr-3 rounded-xl bg-white border border-[#D2CFBF] text-sm text-[#174B2B] outline-none focus:border-[#285D36]"
               />
             </div>
           </div>
@@ -189,7 +220,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full h-11 pl-10 pr-3 rounded-xl bg-white border border-[#E2DDD0] text-sm text-[#174B2B] outline-none focus:border-[#285D36]"
+                  className="w-full h-11 pl-10 pr-3 rounded-xl bg-white border border-[#D2CFBF] text-sm text-[#174B2B] outline-none focus:border-[#285D36]"
                 />
               </div>
             </div>
@@ -198,7 +229,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 rounded-xl bg-[#174B2B] hover:bg-[#285D36] text-[#FAF8F2] font-semibold text-sm transition-all shadow-xs disabled:opacity-50 mt-2 cursor-pointer"
+            className="w-full py-3 px-4 rounded-xl bg-[#174B2B] hover:bg-[#285D36] text-[#FAF7EE] font-semibold text-sm transition-all shadow-xs disabled:opacity-50 mt-2 cursor-pointer"
           >
             {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
           </button>
@@ -211,8 +242,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               Already have an account?{' '}
               <button 
                 type="button" 
-                onClick={() => { setIsSignUp(false); setErrorMsg(''); }}
-                className="font-bold text-[#174B2B] hover:underline"
+                onClick={() => switchMode(false)}
+                className="font-bold text-[#174B2B] hover:underline cursor-pointer"
               >
                 Sign In
               </button>
@@ -222,8 +253,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               Don't have an account yet?{' '}
               <button 
                 type="button" 
-                onClick={() => { setIsSignUp(true); setErrorMsg(''); }}
-                className="font-bold text-[#174B2B] hover:underline"
+                onClick={() => switchMode(true)}
+                className="font-bold text-[#174B2B] hover:underline cursor-pointer"
               >
                 Create Account
               </button>

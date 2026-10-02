@@ -8,6 +8,7 @@ export default function NavigationDrawer({
   setCurrentPage,
   currentUser,
   onOpenAuth,
+  onOpenProfile,
   onSignOut
 }) {
   // Prevent background and home screen scrolling while the menu drawer is open
@@ -116,13 +117,19 @@ export default function NavigationDrawer({
         <div className="p-4 border-t border-[#D2CFBF] bg-[#E8E0CF]/40">
           {currentUser ? (
             <div className="flex items-center justify-between">
-              <div className="truncate pr-2">
-                <p className="text-xs text-[#637869]">Signed in as</p>
-                <p className="text-xs font-semibold text-[#174B2B] truncate">{currentUser.email}</p>
+              <div 
+                className="truncate pr-2 cursor-pointer group"
+                onClick={() => { onClose(); if (onOpenProfile) onOpenProfile(); }}
+                title="View Profile"
+              >
+                <p className="text-xs text-[#637869] group-hover:text-[#174B2B] transition-colors">Signed in as</p>
+                <p className="text-xs font-semibold text-[#174B2B] truncate group-hover:underline">
+                  {currentUser.full_name || currentUser.email}
+                </p>
               </div>
               <button
                 onClick={() => { onSignOut(); onClose(); }}
-                className="flex items-center gap-1 text-xs font-medium text-[#8F3A2B] hover:underline px-2 py-1 rounded"
+                className="flex items-center gap-1 text-xs font-medium text-[#8F3A2B] hover:underline px-2 py-1 rounded cursor-pointer"
                 title="Sign Out"
               >
                 <LogOut className="w-3.5 h-3.5" />

@@ -5,6 +5,7 @@ import HeroSection from './components/HeroSection';
 import FeatureCards from './components/FeatureCards';
 import PlantDetailModal from './components/PlantDetailModal';
 import AuthModal from './components/AuthModal';
+import ProfileModal from './components/ProfileModal';
 import ChatAssistant from './components/ChatAssistant';
 
 import PlantopediaPage from './pages/PlantopediaPage';
@@ -33,6 +34,8 @@ export default function App() {
   const [pageParams, setPageParams] = useState({});
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [authModalInitialSignUp, setAuthModalInitialSignUp] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [savedPlants, setSavedPlants] = useState([]);
@@ -133,10 +136,30 @@ export default function App() {
     try {
       await signOutUser();
       setCurrentUser(null);
+      setIsProfileOpen(false);
       showToast('Signed out successfully');
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const openAuthModal = (signUp = false) => {
+    setAuthModalInitialSignUp(signUp);
+    setIsAuthOpen(true);
+  };
+
+  const handleSwitchAccount = async () => {
+    setIsProfileOpen(false);
+    try {
+      await signOutUser();
+      setCurrentUser(null);
+      showToast('Signed out. Please sign in to your other account.');
+    } catch (err) {
+      console.error(err);
+    }
+    setTimeout(() => {
+      openAuthModal(false);
+    }, 150);
   };
 
   return (
@@ -153,7 +176,8 @@ export default function App() {
       <Header
         currentUser={currentUser}
         onOpenDrawer={() => setIsDrawerOpen(true)}
-        onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenAuth={() => openAuthModal(false)}
+        onOpenProfile={() => setIsProfileOpen(true)}
         onOpenIdentify={() => navigateTo('identify')}
         onSelectPlant={(plant) => setSelectedPlant(plant)}
         setCurrentPage={navigateTo}
@@ -166,7 +190,8 @@ export default function App() {
         currentPage={currentPage}
         setCurrentPage={navigateTo}
         currentUser={currentUser}
-        onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenAuth={() => openAuthModal(false)}
+        onOpenProfile={() => setIsProfileOpen(true)}
         onSignOut={handleSignOut}
       />
 
@@ -304,14 +329,26 @@ export default function App() {
         />
       )}
 
-      {/* Supabase Auth Modal */}
+      {/* Supabase / Local Auth Modal */}
       <AuthModal
         isOpen={isAuthOpen}
+        initialSignUp={authModalInitialSignUp}
         onClose={() => setIsAuthOpen(false)}
         onAuthSuccess={(user) => {
           setCurrentUser(user);
-          showToast(`Welcome back, ${user.email}!`);
+          showToast(`Welcome back, ${user.full_name || user.email}!`);
         }}
+      />
+
+      {/* Dedicated User Profile Modal */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        currentUser={currentUser}
+        savedPlantsCount={savedPlants.length}
+        onNavigate={navigateTo}
+        onSignOut={handleSignOut}
+        onSwitchAccount={handleSwitchAccount}
       />
 
       {/* 8. Floating Herbora Assistant Button with Bot Avatar */}

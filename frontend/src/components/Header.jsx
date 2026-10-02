@@ -6,6 +6,7 @@ export default function Header({
   currentUser, 
   onOpenDrawer, 
   onOpenAuth, 
+  onOpenProfile,
   onOpenIdentify, 
   onSelectPlant,
   setCurrentPage 
@@ -159,16 +160,22 @@ export default function Header({
 
         {/* Right side 2: User Profile button */}
         <button
-          onClick={onOpenAuth}
-          className={`w-12 h-12 shrink-0 flex items-center justify-center rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-[#8DA56B] cursor-pointer shadow-2xs ${
+          onClick={currentUser ? onOpenProfile : onOpenAuth}
+          className={`w-12 h-12 shrink-0 flex items-center justify-center rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-[#8DA56B] cursor-pointer shadow-2xs ${
             currentUser
-              ? 'bg-[#285D36] text-[#FAF7EE] border-[#285D36] hover:bg-[#174B2B]'
+              ? 'bg-[#174B2B] text-[#FAF7EE] border-[#174B2B] hover:bg-[#285D36]'
               : 'bg-[#FAF7EE] border-[#D2CFBF] text-[#174B2B] hover:bg-[#E8E0CF]'
           }`}
-          aria-label={currentUser ? `Account: ${currentUser.email}` : "Sign In or Account"}
-          title={currentUser ? `Signed in as ${currentUser.email}` : "Sign in / Register"}
+          aria-label={currentUser ? `Profile: ${currentUser.email}` : "Sign In or Account"}
+          title={currentUser ? `Signed in as ${currentUser.full_name || currentUser.email} (Click to open profile)` : "Sign in / Register"}
         >
-          <User className="w-5 h-5 stroke-[2]" />
+          {currentUser ? (
+            <span className="font-serif font-bold text-lg leading-none select-none">
+              {(currentUser.full_name || currentUser.email || 'U')[0].toUpperCase()}
+            </span>
+          ) : (
+            <User className="w-5 h-5 stroke-[2]" />
+          )}
         </button>
       </div>
     </header>
