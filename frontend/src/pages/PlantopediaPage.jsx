@@ -71,7 +71,7 @@ export default function PlantopediaPage({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-[#FAF8F2] border border-[#E2DDD0] rounded-2xl p-4 sm:p-5 mb-8 shadow-xs space-y-4">
+      <div className="bg-[#FAF7EE] border border-[#D2CFBF] rounded-2xl p-4 sm:p-5 mb-8 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
           {/* Search Input */}
           <div className="md:col-span-8 relative">
@@ -81,7 +81,7 @@ export default function PlantopediaPage({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by common, scientific, or Ayurvedic name..."
-              className="w-full h-11 pl-11 pr-4 rounded-xl bg-white border border-[#E2DDD0] text-sm text-[#174B2B] outline-none focus:border-[#285D36]"
+              className="w-full h-11 pl-11 pr-4 rounded-xl bg-white border border-[#D2CFBF] text-sm text-[#174B2B] outline-none focus:border-[#285D36]"
             />
           </div>
 
@@ -90,30 +90,13 @@ export default function PlantopediaPage({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full h-11 px-3 rounded-xl bg-white border border-[#E2DDD0] text-sm text-[#174B2B] font-medium outline-none focus:border-[#285D36] cursor-pointer"
+              className="w-full h-11 px-3.5 rounded-xl bg-white border border-[#D2CFBF] text-sm text-[#174B2B] font-medium outline-none focus:border-[#285D36] cursor-pointer"
             >
               {categories.map((c) => (
                 <option key={c} value={c}>Category: {c}</option>
               ))}
             </select>
           </div>
-        </div>
-
-        {/* Category Pills */}
-        <div className="flex flex-wrap gap-2 pt-1 border-t border-[#EAE6DC]">
-          {categories.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                category === c
-                  ? 'bg-[#174B2B] text-[#FAF8F2] shadow-xs'
-                  : 'bg-white border border-[#E2DDD0] text-[#2D3E33] hover:bg-[#EDE6D5]'
-              }`}
-            >
-              {c}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -135,7 +118,7 @@ export default function PlantopediaPage({
 
       {/* Empty State */}
       {!loading && !error && filteredPlants.length === 0 && (
-        <div className="py-16 text-center bg-[#FAF8F2] border border-[#E2DDD0] rounded-2xl p-8">
+        <div className="py-16 text-center bg-[#FAF7EE] border border-[#D2CFBF] rounded-2xl p-8">
           <div className="w-14 h-14 rounded-full bg-[#DDE5C9] flex items-center justify-center mx-auto mb-3 text-[#174B2B]">
             <Sprout className="w-7 h-7" />
           </div>
@@ -160,7 +143,7 @@ export default function PlantopediaPage({
             return (
               <div
                 key={plant.id || plant.slug}
-                className="herbora-card flex flex-col justify-between overflow-hidden p-5 bg-[#FAF8F2] border border-[#E2DDD0] rounded-2xl hover:shadow-md transition-all group"
+                className="herbora-card flex flex-col justify-between overflow-hidden p-5 bg-[#FAF7EE] border border-[#D2CFBF] rounded-2xl hover:shadow-md transition-all group"
               >
                 <div>
                   {/* Top: Category Tag & Save Bookmark */}
@@ -173,7 +156,7 @@ export default function PlantopediaPage({
                       className={`p-1.5 rounded-lg border transition-colors ${
                         isSaved
                           ? 'bg-[#DDE5C9] border-[#8DA56B] text-[#174B2B]'
-                          : 'bg-white border-[#E2DDD0] text-[#8DA56B] hover:text-[#174B2B] hover:bg-[#EDE6D5]'
+                          : 'bg-white border-[#D2CFBF] text-[#8DA56B] hover:text-[#174B2B] hover:bg-[#EDE6D5]'
                       }`}
                       title={isSaved ? 'Saved in My Plant DB' : 'Save to My Plant DB'}
                     >
@@ -182,7 +165,7 @@ export default function PlantopediaPage({
                   </div>
 
                   {/* Plant Image */}
-                  <div className="w-full h-44 rounded-xl overflow-hidden mb-4 border border-[#E2DDD0] bg-white">
+                  <div className="w-full h-44 rounded-xl overflow-hidden mb-4 border border-[#D2CFBF] bg-white">
                     <img 
                       src={plant.image_url || '/assets/herbal-wellness.jpg'} 
                       alt={plant.common_name} 

@@ -310,7 +310,10 @@ export default function App() {
         )}
 
         {currentPage === 'community' && (
-          <CommunityPage currentUser={currentUser} />
+          <CommunityPage 
+            currentUser={currentUser} 
+            onOpenAuth={() => openAuthModal(false)} 
+          />
         )}
 
         {currentPage === 'about' && (
