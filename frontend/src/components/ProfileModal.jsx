@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, User, Mail, Bookmark, LogOut, ArrowRightLeft, Sprout, Calendar, ShieldCheck, ArrowRight } from 'lucide-react';
+import { X, User, Mail, Bookmark, LogOut, ArrowRightLeft, Sprout, Calendar, ShieldCheck, ArrowRight, MessageSquare } from 'lucide-react';
 
 export default function ProfileModal({
   isOpen,
@@ -89,15 +89,15 @@ export default function ProfileModal({
         </div>
 
         {/* Quick Collection Overview */}
-        <div className="bg-[#FFFFFF] border border-[#D2CFBF] rounded-2xl p-4 mb-5 shadow-2xs">
-          <div className="flex items-center justify-between">
+        <div className="space-y-2 mb-5">
+          <div className="bg-[#FFFFFF] border border-[#D2CFBF] rounded-2xl p-3.5 shadow-2xs flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-[#E8E0CF]/80 border border-[#8DA56B]/30 flex items-center justify-center text-[#174B2B]">
-                <Bookmark className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl bg-[#E8E0CF]/80 border border-[#8DA56B]/30 flex items-center justify-center text-[#174B2B]">
+                <Bookmark className="w-4.5 h-4.5" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-[#8DA56B] uppercase tracking-wider">My Plant DB</p>
-                <p className="text-sm font-bold text-[#174B2B]">
+                <p className="text-[11px] font-semibold text-[#8DA56B] uppercase tracking-wider">My Plant DB</p>
+                <p className="text-xs sm:text-sm font-bold text-[#174B2B]">
                   {savedPlantsCount} {savedPlantsCount === 1 ? 'Plant Saved' : 'Plants Saved'}
                 </p>
               </div>
@@ -110,6 +110,30 @@ export default function ProfileModal({
               className="text-xs font-semibold text-[#285D36] hover:text-[#174B2B] flex items-center gap-1 py-1.5 px-2.5 rounded-lg hover:bg-[#E8E0CF]/50 transition-colors cursor-pointer"
             >
               <span>View DB</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="bg-[#FFFFFF] border border-[#D2CFBF] rounded-2xl p-3.5 shadow-2xs flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#E8E0CF]/80 border border-[#8DA56B]/30 flex items-center justify-center text-[#174B2B]">
+                <MessageSquare className="w-4.5 h-4.5" />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-[#8DA56B] uppercase tracking-wider">Community Posts</p>
+                <p className="text-xs sm:text-sm font-bold text-[#174B2B]">
+                  Manage Your Stories
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                onClose();
+                onNavigate('community');
+              }}
+              className="text-xs font-semibold text-[#285D36] hover:text-[#174B2B] flex items-center gap-1 py-1.5 px-2.5 rounded-lg hover:bg-[#E8E0CF]/50 transition-colors cursor-pointer"
+            >
+              <span>View</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

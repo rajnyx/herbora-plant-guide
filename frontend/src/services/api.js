@@ -303,6 +303,54 @@ export async function submitCommunityPost(authorName, plantName, note, userId = 
   return await res.json();
 }
 
+export async function updateCommunityPost(postId, plantName, note, userId) {
+  const res = await fetch(`${API_BASE}/posts/${postId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': userId || ''
+    },
+    body: JSON.stringify({
+      plant_name: plantName,
+      note,
+      user_id: userId
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update post');
+  }
+  return await res.json();
+}
+
+export async function deleteCommunityPost(postId, userId) {
+  const res = await fetch(`${API_BASE}/posts/${postId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': userId || ''
+    },
+    body: JSON.stringify({
+      user_id: userId
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to delete post');
+  }
+  return await res.json();
+}
+
+export async function likeCommunityPost(postId) {
+  const res = await fetch(`${API_BASE}/posts/${postId}/like`, {
+    method: 'POST'
+  });
+  if (!res.ok) {
+    throw new Error('Failed to like post');
+  }
+  return await res.json();
+}
+
 export async function submitUserFeedback(rating, message) {
   const res = await fetch(`${API_BASE}/feedback`, {
     method: 'POST',

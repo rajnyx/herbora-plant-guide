@@ -111,6 +111,7 @@ class CommunityPost(Base):
     __tablename__ = 'community_posts'
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), nullable=True, index=True)
     author_name = Column(String(100), nullable=False)
     plant_name = Column(String(100), nullable=False)
     note = Column(Text, nullable=False)
@@ -120,6 +121,7 @@ class CommunityPost(Base):
     def to_dict(self):
         return {
             "id": self.id,
+            "user_id": self.user_id,
             "author_name": self.author_name,
             "plant_name": self.plant_name,
             "note": self.note,
@@ -180,3 +182,9 @@ def get_db():
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    # Ensure user_id column exists on community_posts in SQLite
+    try:
+        with engine.connect() as conn:
+            conn.execute("ALTER TABLE community_posts ADD COLUMN user_id VARCHAR(36);")
+    except Exception:
+        pass

@@ -459,6 +459,7 @@ def handle_posts():
                 return jsonify({"error": "Note message cannot be empty"}), 400
 
             new_post = CommunityPost(
+                user_id=user_id,
                 author_name=author,
                 plant_name=plant,
                 note=note
@@ -468,8 +469,83 @@ def handle_posts():
             db.refresh(new_post)
             return jsonify(new_post.to_dict()), 201
         else:
-            posts = db.query(CommunityPost).order_by(CommunityPost.created_at.desc()).limit(20).all()
+            user_filter = request.args.get('user_id')
+            query = db.query(CommunityPost)
+            if user_filter:
+                query = query.filter(CommunityPost.user_id == user_filter)
+            posts = query.order_by(CommunityPost.created_at.desc()).limit(50).all()
             return jsonify([p.to_dict() for p in posts])
+    finally:
+        db.close()
+
+@api_bp.route('/posts/<post_id>', methods=['PUT'])
+def edit_post(post_id):
+    db = SessionLocal()
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = data.get('user_id') or request.headers.get('X-User-Id')
+        if not user_id:
+            return jsonify({"error": "Please log in to edit your post"}), 401
+            
+        post = db.query(CommunityPost).filter(CommunityPost.id == post_id).first()
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+            
+        # Permission check: ensure user owns the post
+        if post.user_id and post.user_id != user_id:
+            return jsonify({"error": "You are not authorized to edit this post"}), 403
+            
+        plant = data.get('plant_name', '').strip()
+        note = data.get('note', '').strip()
+        
+        if not note:
+            return jsonify({"error": "Note content cannot be empty"}), 400
+            
+        if plant:
+            post.plant_name = plant
+        post.note = note
+        if data.get('author_name'):
+            post.author_name = data.get('author_name').strip()
+            
+        db.commit()
+        db.refresh(post)
+        return jsonify(post.to_dict()), 200
+    finally:
+        db.close()
+
+@api_bp.route('/posts/<post_id>', methods=['DELETE'])
+def delete_post(post_id):
+    db = SessionLocal()
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = data.get('user_id') or request.headers.get('X-User-Id')
+        if not user_id:
+            return jsonify({"error": "Please log in to delete your post"}), 401
+            
+        post = db.query(CommunityPost).filter(CommunityPost.id == post_id).first()
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+            
+        # Permission check: ensure user owns the post
+        if post.user_id and post.user_id != user_id:
+            return jsonify({"error": "You are not authorized to delete this post"}), 403
+            
+        db.delete(post)
+        db.commit()
+        return jsonify({"message": "Post deleted successfully", "id": post_id}), 200
+    finally:
+        db.close()
+
+@api_bp.route('/posts/<post_id>/like', methods=['POST'])
+def like_post(post_id):
+    db = SessionLocal()
+    try:
+        post = db.query(CommunityPost).filter(CommunityPost.id == post_id).first()
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+        post.likes_count = (post.likes_count or 0) + 1
+        db.commit()
+        return jsonify({"likes_count": post.likes_count}), 200
     finally:
         db.close()
 
