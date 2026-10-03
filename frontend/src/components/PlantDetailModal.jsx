@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { X, Bookmark, BookmarkCheck, ShieldAlert, ExternalLink, Sprout, MapPin, Sun } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function PlantDetailModal({ 
-  plant, 
+  plant: rawPlant, 
   onClose, 
   onSave, 
   isSaved,
   currentUser 
 }) {
+  const { t, localizePlant, localizeCategory, isHindi } = useLanguage();
+  const plant = localizePlant(rawPlant);
   const [saving, setSaving] = useState(false);
 
   // Lock background scroll when plant modal is open
@@ -42,20 +45,20 @@ export default function PlantDetailModal({
       {/* Backdrop */}
       <div 
         onClick={onClose} 
-        className="fixed inset-0 bg-[#174B2B]/40 backdrop-blur-xs transition-opacity" 
+        className="fixed inset-0 bg-[#113E21]/40 backdrop-blur-xs transition-opacity" 
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-3xl bg-[#FAF8F2] border border-[#E2DDD0] rounded-2xl shadow-2xl overflow-hidden my-auto herbora-rise max-h-[90vh] flex flex-col">
+      <div className="relative w-full max-w-3xl bg-[#FAF8F2] border border-[#DDD6C3] rounded-3xl shadow-2xl overflow-hidden my-auto herbora-rise max-h-[90vh] flex flex-col">
         {/* Header Bar */}
-        <div className="p-4 sm:p-5 border-b border-[#EAE6DC] flex items-center justify-between bg-[#F4EFE0]">
+        <div className="p-4 sm:p-5 border-b border-[#DDD6C3] flex items-center justify-between bg-[#F4EFE0]">
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 rounded-full bg-[#DDE5C9] text-[#174B2B] text-xs font-semibold tracking-wide uppercase">
-              {plant.category || 'Ayurvedic Herb'}
+            <span className="px-2.5 py-1 rounded-full bg-[#E2ECD5] text-[#113E21] text-xs font-semibold tracking-wide uppercase">
+              {localizeCategory(plant.category) || 'Ayurvedic Herb'}
             </span>
             {plant.ayurvedic_name && (
-              <span className="font-serif italic text-sm text-[#285D36]">
-                Sanskrit: {plant.ayurvedic_name}
+              <span className="font-serif italic text-sm text-[#4E8738]">
+                {t('plantDetail.sanskrit')} {plant.ayurvedic_name}
               </span>
             )}
           </div>
@@ -95,21 +98,21 @@ export default function PlantDetailModal({
                 <button
                   onClick={handleSaveClick}
                   disabled={saving}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all shadow-xs ${
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all shadow-xs cursor-pointer ${
                     isSaved
-                      ? 'bg-[#DDE5C9] text-[#174B2B] border border-[#8DA56B]'
-                      : 'bg-[#174B2B] text-[#FAF8F2] hover:bg-[#285D36]'
+                      ? 'bg-[#E2ECD5] text-[#113E21] border border-[#4E8738]'
+                      : 'herbora-btn-primary'
                   }`}
                 >
-                  {isSaved ? <BookmarkCheck className="w-4 h-4 text-[#285D36]" /> : <Bookmark className="w-4 h-4" />}
-                  <span>{isSaved ? 'Saved in My Plant DB' : 'Save to My Collection'}</span>
+                  {isSaved ? <BookmarkCheck className="w-4 h-4 text-[#113E21]" /> : <Bookmark className="w-4 h-4" />}
+                  <span>{isSaved ? t('plantDetail.savedButton') : t('plantDetail.saveButton')}</span>
                 </button>
               </div>
             </div>
 
             {/* Thumbnail Image */}
             <div className="md:col-span-4 flex justify-center">
-              <div className="w-40 h-40 rounded-2xl overflow-hidden border border-[#E2DDD0] shadow-inner bg-white">
+              <div className="w-40 h-40 rounded-2xl overflow-hidden border border-[#DDD6C3] shadow-inner bg-white">
                 <img 
                   src={plant.image_url || '/assets/herbal-wellness.jpg'} 
                   alt={plant.common_name} 
@@ -119,48 +122,48 @@ export default function PlantDetailModal({
             </div>
           </div>
 
-          <hr className="border-[#EAE6DC]" />
+          <hr className="border-[#DDD6C3]" />
 
           {/* Section: Traditional Significance & Uses */}
           {plant.traditional_uses && (
             <div className="space-y-1.5">
-              <h3 className="font-serif text-xl font-bold text-[#174B2B] flex items-center gap-2">
-                <Sprout className="w-5 h-5 text-[#8DA56B]" />
-                Traditional Ayurvedic Significance & Uses
+              <h3 className="font-serif text-xl font-bold text-[#113E21] flex items-center gap-2">
+                <Sprout className="w-5 h-5 text-[#4E8738]" />
+                {t('plantDetail.traditionalUses')}
               </h3>
-              <p className="text-sm text-[#3B4E41] leading-relaxed pl-7">
+              <p className="text-sm text-[#1C3625] leading-relaxed pl-7">
                 {plant.traditional_uses}
               </p>
             </div>
           )}
 
           {/* Section: Plant Parts & Cultivation */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#F4EFE0]/60 p-4 rounded-xl border border-[#EAE6DC]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#FAF6EE] p-4 rounded-2xl border border-[#DDD6C3]">
             {plant.plant_parts_used && (
               <div>
-                <span className="text-xs font-semibold text-[#8DA56B] uppercase tracking-wider block mb-1">
-                  Parts Used
+                <span className="text-xs font-semibold text-[#4E8738] uppercase tracking-wider block mb-1">
+                  {t('plantDetail.plantPartsUsed')}
                 </span>
-                <p className="text-sm text-[#174B2B] font-medium">{plant.plant_parts_used}</p>
+                <p className="text-sm text-[#113E21] font-medium">{plant.plant_parts_used}</p>
               </div>
             )}
             {plant.habitat && (
               <div>
-                <span className="text-xs font-semibold text-[#8DA56B] uppercase tracking-wider block mb-1">
-                  Natural Habitat
+                <span className="text-xs font-semibold text-[#4E8738] uppercase tracking-wider block mb-1">
+                  {t('plantDetail.habitat')}
                 </span>
-                <p className="text-sm text-[#174B2B] flex items-center gap-1 font-medium">
-                  <MapPin className="w-3.5 h-3.5 text-[#8DA56B]" />
+                <p className="text-sm text-[#113E21] flex items-center gap-1 font-medium">
+                  <MapPin className="w-3.5 h-3.5 text-[#4E8738]" />
                   {plant.habitat}
                 </p>
               </div>
             )}
             {plant.cultivation_information && (
-              <div className="sm:col-span-2 pt-2 border-t border-[#EAE6DC]">
-                <span className="text-xs font-semibold text-[#8DA56B] uppercase tracking-wider block mb-1">
-                  Cultivation & Care
+              <div className="sm:col-span-2 pt-2 border-t border-[#DDD6C3]">
+                <span className="text-xs font-semibold text-[#4E8738] uppercase tracking-wider block mb-1">
+                  {t('plantDetail.cultivation')}
                 </span>
-                <p className="text-sm text-[#2D3E33] leading-relaxed">
+                <p className="text-sm text-[#1C3625] leading-relaxed">
                   {plant.cultivation_information}
                 </p>
               </div>
@@ -168,13 +171,15 @@ export default function PlantDetailModal({
           </div>
 
           {/* Safety & Educational Warning Alert */}
-          <div className="p-4 rounded-xl bg-[#FFF6F0] border border-[#F2C9B3] text-[#7A3B22] flex items-start gap-3">
+          <div className="p-4 rounded-2xl bg-[#FFF6F0] border border-[#F2C9B3] text-[#7A3B22] flex items-start gap-3">
             <ShieldAlert className="w-5 h-5 text-[#D96B43] shrink-0 mt-0.5" />
             <div className="text-xs leading-relaxed">
-              <span className="font-bold block text-sm mb-1 text-[#8F3A2B]">Important Safety Information</span>
+              <span className="font-bold block text-sm mb-1 text-[#8F3A2B]">{t('plantDetail.safety')}</span>
               {plant.safety_information}
               <p className="mt-1 text-[11px] opacity-85 italic">
-                Disclaimer: Herbora is strictly an educational resource. Traditional Ayurvedic uses must not be taken as guaranteed medical treatments or prescriptions.
+                {isHindi 
+                  ? "अस्वीकरण: हर्बोरा एक शैक्षणिक मंच है। पारंपरिक आयुर्वेदिक उपयोगों को निश्चित चिकित्सा उपचार न मानें।"
+                  : "Disclaimer: Herbora is strictly an educational resource. Traditional Ayurvedic uses must not be taken as guaranteed medical treatments or prescriptions."}
               </p>
             </div>
           </div>
@@ -182,8 +187,8 @@ export default function PlantDetailModal({
           {/* Scientific Source References */}
           {plant.source_references && plant.source_references.length > 0 && (
             <div className="pt-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#8DA56B] block mb-2">
-                Scientific & Botanical References
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#4E8738] block mb-2">
+                {t('plantDetail.sourceReferences')}
               </span>
               <div className="flex flex-wrap gap-2">
                 {plant.source_references.map((ref, i) => (

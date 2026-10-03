@@ -1,12 +1,15 @@
 import React from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function FeatureCards({ onNavigate }) {
+  const { t } = useLanguage();
+
   const cards = [
     {
       id: 'herbal-wellness',
-      title: 'Herbal Wellness',
-      desc: 'Explore the power of\nnatural herbs for a\nhealthier you.',
-      cta: 'Explore Herbs →',
+      title: t('featureCards.card1Title'),
+      desc: t('featureCards.card1Desc'),
+      cta: t('featureCards.card1Cta'),
       targetPage: 'plantopedia',
       image: '/assets/card1_perfect.png',
       alt: 'Herbal bowl with leaves and pestle',
@@ -21,9 +24,9 @@ export default function FeatureCards({ onNavigate }) {
     },
     {
       id: 'daily-wellness',
-      title: 'Daily Wellness',
-      desc: 'Simple daily habits\nfor a balanced and\nhealthy lifestyle.',
-      cta: 'Read More →',
+      title: t('featureCards.card2Title'),
+      desc: t('featureCards.card2Desc'),
+      cta: t('featureCards.card2Cta'),
       targetPage: 'daily-wellness',
       image: '/assets/card2_perfect.png',
       alt: 'Glass cup of herbal tea with leaves on wooden saucer',
@@ -39,9 +42,9 @@ export default function FeatureCards({ onNavigate }) {
     },
     {
       id: 'herbal-wellness-tips',
-      title: 'Herbal Wellness Tips',
-      desc: 'Practical tips and natural\nremedies to support your\nwellness journey.',
-      cta: 'Explore Tips →',
+      title: t('featureCards.card3Title'),
+      desc: t('featureCards.card3Desc'),
+      cta: t('featureCards.card3Cta'),
       targetPage: 'wellness-tips',
       image: '/assets/card3_perfect.png',
       alt: 'Herbal elixir dropper bottle with fresh green herbs',

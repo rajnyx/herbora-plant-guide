@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Filter, Bookmark, BookmarkCheck, ArrowRight, Sprout, AlertCircle } from 'lucide-react';
 import { fetchPlants } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function PlantopediaPage({ 
   initialSearch = '', 
@@ -8,6 +9,7 @@ export default function PlantopediaPage({
   savedPlantIds, 
   onSavePlant 
 }) {
+  const { t, localizePlant, localizeCategory, isHindi } = useLanguage();
   const [plants, setPlants] = useState([]);
   const [search, setSearch] = useState(initialSearch);
   const [category, setCategory] = useState('All');
@@ -32,17 +34,17 @@ export default function PlantopediaPage({
         const data = await fetchPlants(category, search);
         setPlants(data);
       } catch (err) {
-        setError('Could not load plant library. Please verify backend service.');
+        setError(isHindi ? 'पादप डेटाबेस लोड नहीं हो सका।' : 'Could not load plant library. Please verify backend service.');
       } finally {
         setLoading(false);
       }
     }
     loadData();
-  }, [category]);
+  }, [category, isHindi]);
 
   const filteredPlants = useMemo(() => {
-    return plants.filter((p) => {
-      const matchCat = category === 'All' || p.category === category;
+    return plants.map((p) => localizePlant(p)).filter((p) => {
+      const matchCat = category === 'All' || p.category === category || p.category === localizeCategory(category);
       const q = search.toLowerCase();
       const matchSearch = 
         !q ||
@@ -52,7 +54,7 @@ export default function PlantopediaPage({
         (p.regional_names && p.regional_names.some((rn) => rn.toLowerCase().includes(q)));
       return matchCat && matchSearch;
     });
-  }, [plants, category, search]);
+  }, [plants, category, search, isHindi]);
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
@@ -60,10 +62,10 @@ export default function PlantopediaPage({
       <div className="max-w-2xl mb-8 herbora-rise">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#4E8738] mb-2">
           <Sprout className="w-4 h-4 text-[#4E8738]" />
-          <span>Herbora Botanical Herbarium</span>
+          <span>{t('plantopedia.badge')}</span>
         </div>
         <h1 className="font-serif text-4xl sm:text-5xl font-bold text-[#113E21] leading-tight">
-          Plantopedia
+          {t('plantopedia.title')}
         </h1>
         {/* Leaf divider */}
         <div className="flex items-center gap-2 mt-2 mb-3 text-[#6C9352]">
@@ -74,7 +76,7 @@ export default function PlantopediaPage({
           <span className="w-8 h-[1.5px] bg-[#6C9352]/70" />
         </div>
         <p className="text-sm sm:text-base text-[#43634E] leading-relaxed">
-          Explore authentic Ayurvedic medicinal plants, their traditional Sanskrit designations, botanical traits, and historical uses. This database is educational, not medical advice.
+          {t('plantopedia.subtitle')}
         </p>
       </div>
 
@@ -88,7 +90,7 @@ export default function PlantopediaPage({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by common, scientific, or Ayurvedic name..."
+              placeholder={t('plantopedia.searchPlaceholder')}
               className="w-full h-11 pl-11 pr-4 rounded-xl bg-white border border-[#DDD6C3] text-sm text-[#113E21] outline-none focus:border-[#113E21] transition-all"
             />
           </div>
@@ -101,7 +103,9 @@ export default function PlantopediaPage({
               className="w-full h-11 px-3.5 rounded-xl bg-white border border-[#DDD6C3] text-sm text-[#113E21] font-medium outline-none focus:border-[#113E21] cursor-pointer transition-all"
             >
               {categories.map((c) => (
-                <option key={c} value={c}>Category: {c}</option>
+                <option key={c} value={c}>
+                  {isHindi ? `श्रेणी: ${localizeCategory(c)}` : `Category: ${c}`}
+                </option>
               ))}
             </select>
           </div>
@@ -112,7 +116,9 @@ export default function PlantopediaPage({
       {loading && (
         <div className="py-20 text-center text-[#43634E] flex flex-col items-center gap-3">
           <Sprout className="w-10 h-10 animate-bounce text-[#4E8738]" />
-          <p className="font-serif text-xl text-[#113E21]">Opening the Herbarium...</p>
+          <p className="font-serif text-xl text-[#113E21]">
+            {isHindi ? 'पादप डेटाबेस खोला जा रहा है...' : 'Opening the Herbarium...'}
+          </p>
         </div>
       )}
 
@@ -130,15 +136,17 @@ export default function PlantopediaPage({
           <div className="w-14 h-14 rounded-full bg-[#E2ECD5] flex items-center justify-center mx-auto mb-3 text-[#113E21]">
             <Sprout className="w-7 h-7" />
           </div>
-          <h3 className="font-serif text-2xl font-bold text-[#113E21]">No plants matched</h3>
+          <h3 className="font-serif text-2xl font-bold text-[#113E21]">
+            {t('plantopedia.noPlantsFound')}
+          </h3>
           <p className="text-sm text-[#43634E] mt-1 max-w-sm mx-auto">
-            Try adjusting your search keywords or switching category filters.
+            {isHindi ? 'कृपया खोज शब्द बदलें या श्रेणी फ़िल्टर को रीसेट करें।' : 'Try adjusting your search keywords or switching category filters.'}
           </p>
           <button
             onClick={() => { setSearch(''); setCategory('All'); }}
             className="mt-4 px-5 py-2 rounded-full bg-[#113E21] text-[#FAF6EE] text-xs font-semibold hover:bg-[#1C542E] transition-all shadow-xs cursor-pointer"
           >
-            Reset Filters
+            {t('plantopedia.clearSearch')}
           </button>
         </div>
       )}
@@ -157,7 +165,7 @@ export default function PlantopediaPage({
                   {/* Top: Category Tag & Save Bookmark */}
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[11px] font-semibold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-[#E2ECD5] text-[#113E21]">
-                      {plant.category}
+                      {localizeCategory(plant.category)}
                     </span>
                     <button
                       onClick={() => onSavePlant(plant)}
@@ -166,7 +174,7 @@ export default function PlantopediaPage({
                           ? 'bg-[#E2ECD5] border-[#4E8738] text-[#113E21]'
                           : 'bg-white border-[#DDD6C3] text-[#4E8738] hover:text-[#113E21] hover:bg-[#F2EAD9]'
                       }`}
-                      title={isSaved ? 'Saved in My Plant DB' : 'Save to My Plant DB'}
+                      title={isSaved ? t('plantopedia.saved') : t('plantopedia.savePlant')}
                     >
                       {isSaved ? <BookmarkCheck className="w-4 h-4 text-[#113E21]" /> : <Bookmark className="w-4 h-4" />}
                     </button>
@@ -191,7 +199,7 @@ export default function PlantopediaPage({
                   </p>
                   {plant.ayurvedic_name && (
                     <p className="text-xs font-medium text-[#1C542E] mt-1">
-                      Ayurvedic: <span className="font-semibold text-[#113E21]">{plant.ayurvedic_name}</span>
+                      {isHindi ? 'आयुर्वेदिक नाम:' : 'Ayurvedic:'} <span className="font-semibold text-[#113E21]">{plant.ayurvedic_name}</span>
                     </p>
                   )}
 
@@ -205,13 +213,13 @@ export default function PlantopediaPage({
                 <div className="pt-5 mt-4 border-t border-[#DDD6C3]/60 flex items-center justify-between">
                   <button
                     onClick={() => onSelectPlant(plant)}
-                    className="herbora-btn-primary text-xs py-2 px-3.5 cursor-pointer"
+                    className="herbora-btn-primary text-xs py-2 px-3.5 cursor-pointer flex items-center gap-1.5"
                   >
-                    <span>View Details</span>
+                    <span>{t('plantopedia.viewDetails')}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                   <span className="text-[11px] text-[#43634E] italic">
-                    {plant.plant_parts_used ? `Part: ${plant.plant_parts_used.split(',')[0]}` : 'Ayurvedic'}
+                    {plant.plant_parts_used ? `${isHindi ? 'अंग:' : 'Part:'} ${plant.plant_parts_used.split(',')[0]}` : 'Ayurvedic'}
                   </span>
                 </div>
               </div>

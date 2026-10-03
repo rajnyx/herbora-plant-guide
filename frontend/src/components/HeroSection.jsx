@@ -1,6 +1,9 @@
 import React from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function HeroSection() {
+  const { isHindi } = useLanguage();
+
   return (
     <section className="relative w-full max-w-[1450px] mx-auto px-4 sm:px-8 lg:px-12 pt-2 pb-6 sm:pt-4 sm:pb-8 lg:py-4 overflow-hidden">
       {/* Subtle organic left watercolor foliage entering from left screen edge */}
@@ -23,10 +26,21 @@ export default function HeroSection() {
 
           {/* Exact Hero Text with preserved 4-line arrangement on desktop */}
           <h1 className="font-serif text-3xl sm:text-4xl lg:text-[2.85rem] xl:text-[3.25rem] font-bold leading-[1.18] tracking-tight text-[#113E21]">
-            Herbora – because<br />
-            every herb has a purpose<br />
-            and every learner has a<br />
-            journey.”
+            {isHindi ? (
+              <>
+                हर्बोरा – क्योंकि<br />
+                हर जड़ी-बूटी का एक उद्देश्य है<br />
+                और हर जिज्ञासु की<br />
+                अपनी एक यात्रा।”
+              </>
+            ) : (
+              <>
+                Herbora – because<br />
+                every herb has a purpose<br />
+                and every learner has a<br />
+                journey.”
+              </>
+            )}
           </h1>
 
           {/* Decorative design beneath the text: horizontal green lines flanking central leaf */}
