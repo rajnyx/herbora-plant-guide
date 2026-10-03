@@ -4,7 +4,7 @@ Provides endpoints for Plantopedia, My Plant DB, AI Plant Identification,
 Ayurvedic Assistant, Dincharya, Remedies, Myths, Quiz, and Community.
 """
 from flask import Blueprint, request, jsonify
-from models import SessionLocal, Plant, UserSavedPlant, IdentificationResult, CommunityPost, Feedback, User
+from models import SessionLocal, Plant, UserSavedPlant, IdentificationResult, CommunityPost, Feedback, User, PostLike, PostComment
 from werkzeug.security import generate_password_hash, check_password_hash
 from services.plant_identifier import identify_plant_image, AYURVEDIC_BOTANICAL_SIGNATURES
 import uuid
@@ -538,14 +538,111 @@ def delete_post(post_id):
 
 @api_bp.route('/posts/<post_id>/like', methods=['POST'])
 def like_post(post_id):
+    data = request.get_json(silent=True) or {}
+    user_id = data.get('user_id') or request.headers.get('X-User-Id') or request.remote_addr or 'guest'
+    
     db = SessionLocal()
     try:
         post = db.query(CommunityPost).filter(CommunityPost.id == post_id).first()
         if not post:
             return jsonify({"error": "Post not found"}), 404
+
+        # Check if already liked by this user/client
+        existing_like = db.query(PostLike).filter(
+            PostLike.post_id == post_id,
+            PostLike.user_id == user_id
+        ).first()
+
+        if existing_like:
+            return jsonify({
+                "already_liked": True,
+                "likes_count": post.likes_count or 0,
+                "message": "You have already liked this note."
+            }), 200
+
+        # Record new like
+        new_like = PostLike(post_id=post_id, user_id=user_id)
+        db.add(new_like)
         post.likes_count = (post.likes_count or 0) + 1
         db.commit()
-        return jsonify({"likes_count": post.likes_count}), 200
+        return jsonify({
+            "already_liked": False,
+            "likes_count": post.likes_count,
+            "message": "Liked successfully"
+        }), 200
+    finally:
+        db.close()
+
+@api_bp.route('/posts/<post_id>/comments', methods=['GET'])
+def get_post_comments(post_id):
+    db = SessionLocal()
+    try:
+        comments = db.query(PostComment).filter(PostComment.post_id == post_id).order_by(PostComment.created_at.asc()).all()
+        return jsonify([c.to_dict() for c in comments]), 200
+    finally:
+        db.close()
+
+@api_bp.route('/posts/<post_id>/comments', methods=['POST'])
+def add_post_comment(post_id):
+    data = request.get_json(silent=True) or {}
+    user_id = data.get('user_id') or request.headers.get('X-User-Id')
+    author_name = (data.get('author_name') or '').strip() or 'Botanical Reader'
+    content = (data.get('content') or data.get('comment') or '').strip()
+
+    if not content:
+        return jsonify({"error": "Comment cannot be empty"}), 400
+
+    db = SessionLocal()
+    try:
+        post = db.query(CommunityPost).filter(CommunityPost.id == post_id).first()
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+
+        new_comment = PostComment(
+            post_id=post_id,
+            user_id=user_id,
+            author_name=author_name,
+            content=content
+        )
+        db.add(new_comment)
+        db.commit()
+        db.refresh(new_comment)
+
+        total_comments = db.query(PostComment).filter(PostComment.post_id == post_id).count()
+        return jsonify({
+            "message": "Comment posted successfully",
+            "comment": new_comment.to_dict(),
+            "comments_count": total_comments
+        }), 201
+    finally:
+        db.close()
+
+@api_bp.route('/comments/<comment_id>', methods=['DELETE'])
+def delete_post_comment(comment_id):
+    data = request.get_json(silent=True) or {}
+    user_id = data.get('user_id') or request.headers.get('X-User-Id')
+    if not user_id:
+        return jsonify({"error": "Please log in to delete your comment"}), 401
+
+    db = SessionLocal()
+    try:
+        comment = db.query(PostComment).filter(PostComment.id == comment_id).first()
+        if not comment:
+            return jsonify({"error": "Comment not found"}), 404
+
+        if comment.user_id and comment.user_id != user_id:
+            return jsonify({"error": "You are not authorized to delete this comment"}), 403
+
+        post_id = comment.post_id
+        db.delete(comment)
+        db.commit()
+        total_comments = db.query(PostComment).filter(PostComment.post_id == post_id).count()
+        return jsonify({
+            "message": "Comment deleted successfully",
+            "comment_id": comment_id,
+            "post_id": post_id,
+            "comments_count": total_comments
+        }), 200
     finally:
         db.close()
 

@@ -5,7 +5,7 @@ Supports both SQLite (local development) and Supabase PostgreSQL
 import os
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import create_engine, Column, String, Text, Integer, Float, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy import create_engine, Column, String, Text, Integer, Float, Boolean, DateTime, ForeignKey, JSON, UniqueConstraint
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 Base = declarative_base()
@@ -118,14 +118,66 @@ class CommunityPost(Base):
     likes_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    def to_dict(self):
+    comments = relationship("PostComment", back_populates="post", cascade="all, delete-orphan", order_by="PostComment.created_at.asc()")
+    likes = relationship("PostLike", back_populates="post", cascade="all, delete-orphan")
+
+    def to_dict(self, include_comments=True):
+        comments_list = [c.to_dict() for c in (self.comments or [])] if include_comments else []
         return {
             "id": self.id,
             "user_id": self.user_id,
             "author_name": self.author_name,
             "plant_name": self.plant_name,
             "note": self.note,
-            "likes_count": self.likes_count,
+            "likes_count": self.likes_count or 0,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "comments": comments_list,
+            "comments_count": len(comments_list)
+        }
+
+
+class PostComment(Base):
+    __tablename__ = 'post_comments'
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    post_id = Column(String(36), ForeignKey('community_posts.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = Column(String(64), nullable=True, index=True)
+    author_name = Column(String(100), nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    post = relationship("CommunityPost", back_populates="comments")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "post_id": self.post_id,
+            "user_id": self.user_id,
+            "author_name": self.author_name,
+            "content": self.content,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class PostLike(Base):
+    __tablename__ = 'post_likes'
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    post_id = Column(String(36), ForeignKey('community_posts.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = Column(String(64), nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint('post_id', 'user_id', name='uq_post_user_like'),
+    )
+
+    post = relationship("CommunityPost", back_populates="likes")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "post_id": self.post_id,
+            "user_id": self.user_id,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
 

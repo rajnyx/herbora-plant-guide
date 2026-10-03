@@ -198,71 +198,12 @@ export default function App() {
       {/* Dynamic Page Content */}
       <main className="flex-1 w-full">
         {currentPage === 'home' && (
-          <div className="space-y-4">
+          <div>
             {/* 5.3 Hero Section */}
             <HeroSection />
 
             {/* 6. Three Feature Cards */}
             <FeatureCards onNavigate={navigateTo} />
-
-            {/* Quick Interactive Highlights */}
-            <section className="w-full max-w-[1450px] mx-auto px-4 sm:px-8 lg:px-12 py-10 border-t border-[#D2CFBF]">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {/* Highlight 1: Daily Dincharya */}
-                <div 
-                  onClick={() => navigateTo('daily-wellness')}
-                  className="herbora-card p-6 bg-[#FAF7EE] border border-[#D2CFBF] rounded-2xl cursor-pointer hover:border-[#8DA56B] transition-all group"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-2xl">🌅</span>
-                    <span className="text-xs font-semibold text-[#8DA56B] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                      <span>Explore</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                  <h3 className="font-serif text-xl font-bold text-[#174B2B]">Circadian Clock</h3>
-                  <p className="text-xs text-[#556B5D] mt-1.5 leading-relaxed">
-                    Align your morning awakening, meals, and restorative sleep with classical Ayurvedic Dincharya.
-                  </p>
-                </div>
-
-                {/* Highlight 2: Ayurvedic Knowledge Quiz */}
-                <div 
-                  onClick={() => navigateTo('quiz')}
-                  className="herbora-card p-6 bg-[#FAF7EE] border border-[#D2CFBF] rounded-2xl cursor-pointer hover:border-[#8DA56B] transition-all group"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-2xl">🌿</span>
-                    <span className="text-xs font-semibold text-[#8DA56B] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                      <span>Take Quiz</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                  <h3 className="font-serif text-xl font-bold text-[#174B2B]">Botanical Quiz</h3>
-                  <p className="text-xs text-[#556B5D] mt-1.5 leading-relaxed">
-                    Test your knowledge of Ayurvedic herbs, classical rasayanas, and medicinal plant classifications.
-                  </p>
-                </div>
-
-                {/* Highlight 3: AI Plant Identification Lens */}
-                <div 
-                  onClick={() => navigateTo('identify')}
-                  className="herbora-card p-6 bg-[#FAF7EE] border border-[#D2CFBF] rounded-2xl cursor-pointer hover:border-[#8DA56B] transition-all group"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-2xl">🌱</span>
-                    <span className="text-xs font-semibold text-[#8DA56B] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                      <span>Upload Photo</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                  <h3 className="font-serif text-xl font-bold text-[#174B2B]">Visual Herb Lens</h3>
-                  <p className="text-xs text-[#556B5D] mt-1.5 leading-relaxed">
-                    Identify unfamiliar garden herbs using our AI botanical marker heuristics and match them to Plantopedia.
-                  </p>
-                </div>
-              </div>
-            </section>
           </div>
         )}
 

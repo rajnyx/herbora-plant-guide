@@ -341,12 +341,74 @@ export async function deleteCommunityPost(postId, userId) {
   return await res.json();
 }
 
-export async function likeCommunityPost(postId) {
+export function getPersistentClientId() {
+  let id = localStorage.getItem('herbora_client_id');
+  if (!id) {
+    id = 'guest_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+    localStorage.setItem('herbora_client_id', id);
+  }
+  return id;
+}
+
+export async function likeCommunityPost(postId, userId = null) {
+  const effectiveUserId = userId || getPersistentClientId();
   const res = await fetch(`${API_BASE}/posts/${postId}/like`, {
-    method: 'POST'
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': effectiveUserId
+    },
+    body: JSON.stringify({ user_id: effectiveUserId })
   });
   if (!res.ok) {
-    throw new Error('Failed to like post');
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to like post');
+  }
+  return await res.json();
+}
+
+export async function fetchPostComments(postId) {
+  try {
+    const res = await fetch(`${API_BASE}/posts/${postId}/comments`);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function submitPostComment(postId, content, authorName, userId = null) {
+  const res = await fetch(`${API_BASE}/posts/${postId}/comments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': userId || ''
+    },
+    body: JSON.stringify({
+      content,
+      author_name: authorName,
+      user_id: userId
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to submit comment');
+  }
+  return await res.json();
+}
+
+export async function deletePostComment(commentId, userId) {
+  const res = await fetch(`${API_BASE}/comments/${commentId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': userId || ''
+    },
+    body: JSON.stringify({ user_id: userId })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to delete comment');
   }
   return await res.json();
 }

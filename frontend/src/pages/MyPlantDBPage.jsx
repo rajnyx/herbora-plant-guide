@@ -13,27 +13,27 @@ export default function MyPlantDBPage({
   if (!currentUser) {
     return (
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-8 py-16 text-center herbora-rise">
-        <div className="bg-[#FAF8F2] border border-[#E2DDD0] rounded-3xl p-8 sm:p-12 shadow-sm max-w-lg mx-auto">
-          <div className="w-16 h-16 rounded-2xl bg-[#DDE5C9] border border-[#8DA56B] flex items-center justify-center mx-auto mb-4 text-[#174B2B]">
+        <div className="bg-[#FFFDF8] border border-[#DDD6C3] rounded-3xl p-8 sm:p-12 shadow-sm max-w-lg mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-[#E2ECD5] border border-[#4E8738] flex items-center justify-center mx-auto mb-4 text-[#113E21]">
             <Bookmark className="w-8 h-8" />
           </div>
-          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#174B2B]">
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#113E21]">
             My Plant DB
           </h1>
-          <p className="text-sm text-[#556B5D] mt-2 mb-6 leading-relaxed">
+          <p className="text-sm text-[#43634E] mt-2 mb-6 leading-relaxed">
             Please log in or create an account to save your favorite Ayurvedic plants, bookmark personal remedies, and build your personalized herbarium.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={onOpenAuth}
-              className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-[#174B2B] hover:bg-[#285D36] text-[#FAF8F2] text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
+              className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-[#113E21] hover:bg-[#1C542E] text-[#FAF6EE] text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
             >
               <LogIn className="w-4 h-4" />
               <span>Log In / Sign Up</span>
             </button>
             <button
               onClick={onNavigateToPlantopedia}
-              className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-white border border-[#E2DDD0] text-[#174B2B] hover:bg-[#EDE6D5] text-sm font-semibold transition-all cursor-pointer"
+              className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-white border border-[#DDD6C3] text-[#113E21] hover:bg-[#F2EAD9] text-sm font-semibold transition-all cursor-pointer"
             >
               <span>Explore Plantopedia</span>
             </button>
@@ -47,33 +47,41 @@ export default function MyPlantDBPage({
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
       {/* Page Header */}
       <div className="max-w-2xl mb-8 herbora-rise">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#8DA56B] mb-2">
-          <Bookmark className="w-4 h-4" />
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#4E8738] mb-2">
+          <Bookmark className="w-4 h-4 text-[#4E8738]" />
           <span>Personal Herbarium</span>
         </div>
-        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-[#174B2B] leading-tight">
+        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-[#113E21] leading-tight">
           My Plant DB
         </h1>
-        <p className="text-sm sm:text-base text-[#556B5D] mt-2 leading-relaxed">
+        {/* Leaf divider */}
+        <div className="flex items-center gap-2 mt-2 mb-3 text-[#6C9352]">
+          <span className="w-8 h-[1.5px] bg-[#6C9352]/70" />
+          <svg width="14" height="12" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 12C10 12 8 7 3 6C3 6 8 4 10 0C10 0 12 4 17 6C17 6 12 7 10 12Z" fill="#6C9352"/>
+          </svg>
+          <span className="w-8 h-[1.5px] bg-[#6C9352]/70" />
+        </div>
+        <p className="text-sm sm:text-base text-[#43634E] mt-2 leading-relaxed">
           Plants you have bookmarked from Plantopedia. Review their Ayurvedic properties, cultivation notes, and traditional remedies anytime.
         </p>
       </div>
 
       {/* Empty State for authenticated users with 0 saved plants */}
       {savedPlants.length === 0 ? (
-        <div className="py-16 text-center bg-[#FAF8F2] border border-[#E2DDD0] rounded-3xl p-8 sm:p-12 max-w-xl mx-auto herbora-rise">
-          <div className="w-16 h-16 rounded-2xl bg-[#DDE5C9] flex items-center justify-center mx-auto mb-4 text-[#174B2B]">
+        <div className="py-16 text-center bg-[#FFFDF8] border border-[#DDD6C3] rounded-3xl p-8 sm:p-12 max-w-xl mx-auto herbora-rise">
+          <div className="w-16 h-16 rounded-2xl bg-[#E2ECD5] flex items-center justify-center mx-auto mb-4 text-[#113E21]">
             <Sprout className="w-8 h-8" />
           </div>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#174B2B]">
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#113E21]">
             Your personal collection is empty
           </h2>
-          <p className="text-sm text-[#637869] mt-2 mb-6 max-w-md mx-auto leading-relaxed">
+          <p className="text-sm text-[#43634E] mt-2 mb-6 max-w-md mx-auto leading-relaxed">
             Browse through Herbora's Plantopedia database and click the bookmark icon on any plant to add it to your personal database.
           </p>
           <button
             onClick={onNavigateToPlantopedia}
-            className="herbora-btn-primary py-2.5 px-6 text-sm"
+            className="herbora-btn-primary py-2.5 px-6 text-sm cursor-pointer"
           >
             <BookOpen className="w-4 h-4" />
             <span>Discover Plants in Plantopedia</span>
@@ -87,17 +95,17 @@ export default function MyPlantDBPage({
             return (
               <div
                 key={item.id || plant.id || plant.slug}
-                className="herbora-card flex flex-col justify-between overflow-hidden p-5 bg-[#FAF8F2] border border-[#E2DDD0] rounded-2xl hover:shadow-md transition-all"
+                className="herbora-card flex flex-col justify-between overflow-hidden p-5 bg-[#FFFDF8] border border-[#DDD6C3] rounded-2xl hover:shadow-md hover:border-[#6C9352] transition-all"
               >
                 <div>
                   {/* Top Bar: Category & Remove Button */}
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] font-semibold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-[#DDE5C9] text-[#174B2B]">
+                    <span className="text-[11px] font-semibold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-[#E2ECD5] text-[#113E21]">
                       {plant.category || 'Herb'}
                     </span>
                     <button
                       onClick={() => onRemovePlant(plant.id || plant.slug)}
-                      className="p-1.5 rounded-lg border border-[#F5C2BC] bg-[#FDF2F0] text-[#9E2B25] hover:bg-[#FBE7E5] transition-colors"
+                      className="p-1.5 rounded-lg border border-[#F5C2BC] bg-[#FDF2F0] text-[#9E2B25] hover:bg-[#FBE7E5] transition-colors cursor-pointer"
                       title="Remove from My Plant DB"
                     >
                       <Trash2 className="w-4 h-4" />

@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { X, Home, BookOpen, Bookmark, Camera, Clock, Sparkles, Sprout, HelpCircle, MessageSquare, Info, LogOut, LogIn } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSelector from './LanguageSelector';
 
 export default function NavigationDrawer({
   isOpen,
@@ -11,6 +13,8 @@ export default function NavigationDrawer({
   onOpenProfile,
   onSignOut
 }) {
+  const { t } = useLanguage();
+
   // Prevent background and home screen scrolling while the menu drawer is open
   useEffect(() => {
     if (!isOpen) return;
@@ -30,16 +34,16 @@ export default function NavigationDrawer({
   if (!isOpen) return null;
 
   const navItems = [
-    { id: 'home', label: 'Home', icon: Home, desc: 'Ayurvedic Discovery Home' },
-    { id: 'plantopedia', label: 'Plantopedia', icon: BookOpen, desc: 'Ayurvedic Plant Database' },
-    { id: 'my-plants', label: 'My Plant DB', icon: Bookmark, desc: 'Personal Saved Plants' },
-    { id: 'identify', label: 'Identify a Plant', icon: Camera, desc: 'AI Botanical Vision' },
-    { id: 'daily-wellness', label: 'Daily Wellness (Dincharya)', icon: Clock, desc: 'Circadian Routine' },
-    { id: 'wellness-tips', label: 'Herbal Remedies & Tips', icon: Sparkles, desc: 'Home Remedies & Myths' },
-    { id: 'garden-planner', label: 'Home Garden Planner', icon: Sprout, desc: 'Watering & Care Tracker' },
-    { id: 'quiz', label: 'Ayurvedic Quiz', icon: HelpCircle, desc: 'Test Botanical Knowledge' },
-    { id: 'community', label: 'Community Stories', icon: MessageSquare, desc: 'Herb Grower Notes' },
-    { id: 'about', label: 'About Herbora', icon: Info, desc: 'Mission & Health Disclaimer' }
+    { id: 'home', label: t('nav.home'), icon: Home, desc: t('nav.homeDesc') },
+    { id: 'plantopedia', label: t('nav.plantopedia'), icon: BookOpen, desc: t('nav.plantopediaDesc') },
+    { id: 'my-plants', label: t('nav.myPlants'), icon: Bookmark, desc: t('nav.myPlantsDesc') },
+    { id: 'identify', label: t('nav.identify'), icon: Camera, desc: t('nav.identifyDesc') },
+    { id: 'daily-wellness', label: t('nav.dailyWellness'), icon: Clock, desc: t('nav.dailyWellnessDesc') },
+    { id: 'wellness-tips', label: t('nav.wellnessTips'), icon: Sparkles, desc: t('nav.wellnessTipsDesc') },
+    { id: 'garden-planner', label: t('nav.gardenPlanner'), icon: Sprout, desc: t('nav.gardenPlannerDesc') },
+    { id: 'quiz', label: t('nav.quiz'), icon: HelpCircle, desc: t('nav.quizDesc') },
+    { id: 'community', label: t('nav.community'), icon: MessageSquare, desc: t('nav.communityDesc') },
+    { id: 'about', label: t('nav.about'), icon: Info, desc: t('nav.aboutDesc') }
   ];
 
   const handleNavigate = (pageId) => {
@@ -52,38 +56,43 @@ export default function NavigationDrawer({
       {/* Backdrop */}
       <div 
         onClick={onClose}
-        className="absolute inset-0 bg-[#174B2B]/30 backdrop-blur-xs transition-opacity"
+        className="absolute inset-0 bg-[#113E21]/30 backdrop-blur-xs transition-opacity"
       />
 
       {/* Slide-out panel */}
       <div 
-        className="absolute inset-y-0 left-0 max-w-xs w-full bg-[#FAF7EE] border-r border-[#D2CFBF] shadow-2xl flex flex-col justify-between herbora-rise overscroll-contain"
+        className="absolute inset-y-0 left-0 max-w-xs w-full bg-[#FAF6EE] border-r border-[#DDD6C3] shadow-2xl flex flex-col justify-between herbora-rise overscroll-contain"
         style={{ overscrollBehavior: 'contain' }}
       >
         {/* Drawer Header */}
-        <div className="p-5 border-b border-[#D2CFBF] flex items-center justify-between select-none">
+        <div className="p-5 border-b border-[#DDD6C3] flex items-center justify-between select-none">
           <div className="flex items-center gap-3">
             <img 
               src="/assets/herbora-logo.png" 
               alt="Herbora Logo" 
-              className="w-10 h-10 object-contain rounded-full border border-[#D2CFBF]"
+              className="w-10 h-10 object-contain rounded-full border border-[#DDD6C3]"
             />
             <div>
-              <h2 className="font-serif text-2xl font-bold text-[#174B2B] leading-tight">Herbora</h2>
-              <p className="text-[10px] tracking-widest text-[#8DA56B] uppercase font-semibold">Ancient Wisdom • Modern Discovery</p>
+              <h2 className="font-serif text-2xl font-bold text-[#113E21] leading-tight">{t('brand.name')}</h2>
+              <p className="text-[10px] tracking-widest text-[#4E8738] uppercase font-semibold">{t('brand.tagline')}</p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="w-9 h-9 flex items-center justify-center rounded-lg text-[#556B5D] hover:bg-[#E8E0CF] transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-[#43634E] hover:bg-[#F0E8D7] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Language selector in drawer */}
+        <div className="px-4 pt-3 pb-1">
+          <LanguageSelector variant="drawer" />
+        </div>
+
         {/* Navigation list */}
         <div 
-          className="flex-1 overflow-y-auto py-3 px-3 space-y-1 overscroll-contain"
+          className="flex-1 overflow-y-auto py-2 px-3 space-y-1 overscroll-contain"
           style={{ overscrollBehavior: 'contain' }}
         >
           {navItems.map((item) => {
@@ -93,19 +102,19 @@ export default function NavigationDrawer({
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.id)}
-                className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-left transition-all ${
+                className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-left transition-all cursor-pointer ${
                   active 
-                    ? 'bg-[#D8E1C3] text-[#174B2B] font-semibold shadow-xs' 
-                    : 'text-[#2D3E33] hover:bg-[#E8E0CF]/70'
+                    ? 'bg-[#E2ECD5] text-[#113E21] font-semibold shadow-xs' 
+                    : 'text-[#1C3625] hover:bg-[#F0E8D7]/80'
                 }`}
               >
-                <div className={`p-2 rounded-lg ${active ? 'bg-[#174B2B] text-[#FAF7EE]' : 'bg-[#FAF7EE] text-[#285D36] border border-[#D2CFBF]'}`}>
+                <div className={`p-2 rounded-lg ${active ? 'bg-[#113E21] text-[#FAF6EE]' : 'bg-white text-[#4E8738] border border-[#DDD6C3]'}`}>
                   <Icon className="w-4 h-4" />
                 </div>
                 <div>
                   <div className="text-sm font-medium leading-tight">{item.label}</div>
                   {item.desc && (
-                    <div className="text-[11px] text-[#637869] leading-tight mt-0.5">{item.desc}</div>
+                    <div className="text-[11px] text-[#43634E] leading-tight mt-0.5">{item.desc}</div>
                   )}
                 </div>
               </button>
@@ -114,7 +123,7 @@ export default function NavigationDrawer({
         </div>
 
         {/* Drawer Footer: User Profile / Auth State */}
-        <div className="p-4 border-t border-[#D2CFBF] bg-[#E8E0CF]/40">
+        <div className="p-4 border-t border-[#DDD6C3] bg-[#FAF6EE]/80">
           {currentUser ? (
             <div className="flex items-center justify-between">
               <div 
@@ -122,27 +131,27 @@ export default function NavigationDrawer({
                 onClick={() => { onClose(); if (onOpenProfile) onOpenProfile(); }}
                 title="View Profile"
               >
-                <p className="text-xs text-[#637869] group-hover:text-[#174B2B] transition-colors">Signed in as</p>
-                <p className="text-xs font-semibold text-[#174B2B] truncate group-hover:underline">
+                <p className="text-xs text-[#43634E] group-hover:text-[#113E21] transition-colors">{t('nav.signedInAs')}</p>
+                <p className="text-xs font-semibold text-[#113E21] truncate group-hover:underline">
                   {currentUser.full_name || currentUser.email}
                 </p>
               </div>
               <button
                 onClick={() => { onSignOut(); onClose(); }}
-                className="flex items-center gap-1 text-xs font-medium text-[#8F3A2B] hover:underline px-2 py-1 rounded cursor-pointer"
-                title="Sign Out"
+                className="flex items-center gap-1 text-xs font-medium text-[#C0392B] hover:underline px-2 py-1 rounded cursor-pointer"
+                title={t('nav.exit')}
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span>Exit</span>
+                <span>{t('nav.exit')}</span>
               </button>
             </div>
           ) : (
             <button
               onClick={() => { onClose(); onOpenAuth(); }}
-              className="w-full py-2.5 px-4 bg-[#174B2B] hover:bg-[#285D36] text-[#FAF7EE] rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-xs"
+              className="w-full py-2.5 px-4 herbora-btn-primary rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-xs cursor-pointer"
             >
               <LogIn className="w-4 h-4" />
-              <span>Log In to Save Plants</span>
+              <span>{t('nav.logInToSave')}</span>
             </button>
           )}
         </div>

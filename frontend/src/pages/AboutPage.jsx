@@ -28,46 +28,54 @@ export default function AboutPage() {
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-8 py-8 sm:py-12 space-y-12">
       {/* Brand Identity & Logo Showcase */}
       <div className="text-center max-w-2xl mx-auto space-y-4 herbora-rise">
-        <div className="w-28 h-28 mx-auto rounded-3xl overflow-hidden border border-[#E2DDD0] shadow-sm bg-white p-2">
+        <div className="w-28 h-28 mx-auto rounded-3xl overflow-hidden border border-[#DDD6C3] shadow-sm bg-white p-2">
           <img 
             src="/assets/herbora-logo.png" 
             alt="Official Herbora Logo" 
             className="w-full h-full object-contain"
           />
         </div>
-        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-[#174B2B]">
+        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-[#113E21]">
           About Herbora
         </h1>
-        <p className="text-xs sm:text-sm font-bold tracking-widest text-[#8DA56B] uppercase">
+        {/* Leaf divider */}
+        <div className="flex items-center justify-center gap-2 mt-2 mb-1 text-[#6C9352]">
+          <span className="w-8 h-[1.5px] bg-[#6C9352]/70" />
+          <svg width="14" height="12" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 12C10 12 8 7 3 6C3 6 8 4 10 0C10 0 12 4 17 6C17 6 12 7 10 12Z" fill="#6C9352"/>
+          </svg>
+          <span className="w-8 h-[1.5px] bg-[#6C9352]/70" />
+        </div>
+        <p className="text-xs sm:text-sm font-bold tracking-widest text-[#4E8738] uppercase">
           Ancient Wisdom • Modern Discovery
         </p>
-        <p className="text-sm sm:text-base text-[#556B5D] leading-relaxed pt-2">
+        <p className="text-sm sm:text-base text-[#43634E] leading-relaxed pt-2">
           Herbora is an Ayurveda-focused digital learning and botanical identification platform. Our objective is to bridge classical botanical knowledge with modern image processing and accessible digital education.
         </p>
       </div>
 
       {/* Pillars Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="herbora-card p-7 bg-[#FAF8F2] border border-[#E2DDD0] rounded-3xl">
+        <div className="herbora-card p-7 bg-[#FFFDF8] border border-[#DDD6C3] rounded-3xl hover:border-[#6C9352] transition-all">
           <span className="text-3xl mb-3 block">📜</span>
-          <h3 className="font-serif text-xl font-bold text-[#174B2B]">Classical Authenticity</h3>
-          <p className="text-xs sm:text-sm text-[#3B4E41] leading-relaxed mt-2">
+          <h3 className="font-serif text-xl font-bold text-[#113E21]">Classical Authenticity</h3>
+          <p className="text-xs sm:text-sm text-[#1F3D29] leading-relaxed mt-2">
             Plant classifications, doshic attributes, and traditional uses are reviewed against classical texts such as the Charaka Samhita and the Ayurvedic Pharmacopoeia of India.
           </p>
         </div>
 
-        <div className="herbora-card p-7 bg-[#FAF8F2] border border-[#E2DDD0] rounded-3xl">
+        <div className="herbora-card p-7 bg-[#FFFDF8] border border-[#DDD6C3] rounded-3xl hover:border-[#6C9352] transition-all">
           <span className="text-3xl mb-3 block">🔬</span>
-          <h3 className="font-serif text-xl font-bold text-[#174B2B]">Modern Discovery</h3>
-          <p className="text-xs sm:text-sm text-[#3B4E41] leading-relaxed mt-2">
+          <h3 className="font-serif text-xl font-bold text-[#113E21]">Modern Discovery</h3>
+          <p className="text-xs sm:text-sm text-[#1F3D29] leading-relaxed mt-2">
             Empowered by AI vision heuristics, Herbora helps students and plant enthusiasts recognize medicinal flora in their neighborhood gardens and homes.
           </p>
         </div>
 
-        <div className="herbora-card p-7 bg-[#FAF8F2] border border-[#E2DDD0] rounded-3xl">
+        <div className="herbora-card p-7 bg-[#FFFDF8] border border-[#DDD6C3] rounded-3xl hover:border-[#6C9352] transition-all">
           <span className="text-3xl mb-3 block">🌱</span>
-          <h3 className="font-serif text-xl font-bold text-[#174B2B]">Home Cultivation</h3>
-          <p className="text-xs sm:text-sm text-[#3B4E41] leading-relaxed mt-2">
+          <h3 className="font-serif text-xl font-bold text-[#113E21]">Home Cultivation</h3>
+          <p className="text-xs sm:text-sm text-[#1F3D29] leading-relaxed mt-2">
             Encouraging mindful connection with nature through household botanical care guides, watering schedules, and daily circadian rituals.
           </p>
         </div>
@@ -90,10 +98,10 @@ export default function AboutPage() {
       </div>
 
       {/* Student Project Feedback Form */}
-      <div className="bg-[#FAF8F2] border border-[#E2DDD0] rounded-3xl p-7 sm:p-8 max-w-xl mx-auto space-y-4 shadow-xs">
+      <div className="bg-[#FFFDF8] border border-[#DDD6C3] rounded-3xl p-7 sm:p-8 max-w-xl mx-auto space-y-4 shadow-xs">
         <div className="text-center">
-          <h2 className="font-serif text-2xl font-bold text-[#174B2B]">Platform Feedback</h2>
-          <p className="text-xs text-[#637869] mt-1">Help us improve the Herbora botanical learning experience</p>
+          <h2 className="font-serif text-2xl font-bold text-[#113E21]">Platform Feedback</h2>
+          <p className="text-xs text-[#43634E] mt-1">Help us improve the Herbora botanical learning experience</p>
         </div>
 
         {submitted ? (
