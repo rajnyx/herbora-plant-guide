@@ -1,20 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Sparkles, Sprout } from 'lucide-react';
 import { sendBotChat } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function ChatAssistant({ onExplorePlants }) {
+  const { t, isHindi } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState(() => [
     {
       sender: 'bot',
-      text: 'Namaste! I am your Herbora Botanical Guide. Ask me about any Ayurvedic plant, traditional remedies, or how to begin your herbal wellness journey.'
+      text: isHindi 
+        ? 'नमस्ते! मैं आपका हर्बोरा वानस्पतिक सहायक हूँ। मुझसे किसी भी आयुर्वेदिक पौधे, घरेलू नुस्खे या दिनचर्या के विषय में पूछें।'
+        : 'Namaste! I am your Herbora Botanical Guide. Ask me about any Ayurvedic plant, traditional remedies, or how to begin your herbal wellness journey.'
     }
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const quickPrompts = [
+  const quickPrompts = isHindi ? [
+    'अनिद्रा और तनाव के लिए उपाय?',
+    'तुलसी का सेवन कैसे करें?',
+    'त्वचा के लिए गुणकारी जड़ी-बूटियाँ',
+    'पाचन के लिए अदरक का प्रयोग'
+  ] : [
     'What helps with sleep?',
     'How should I take Tulsi?',
     'Herbs for clear skin',
@@ -88,10 +97,12 @@ export default function ChatAssistant({ onExplorePlants }) {
                 className="w-8 h-8 rounded-full border border-[#8DA56B]/60 bg-white" 
               />
               <div>
-                <h3 className="font-serif text-lg font-bold leading-tight">Herbora Assistant</h3>
+                <h3 className="font-serif text-lg font-bold leading-tight">
+                  {t('chat.title', 'Herbora Assistant')}
+                </h3>
                 <p className="text-[10px] text-[#D8E1C3] flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#8DA56B] animate-pulse" />
-                  Ayurvedic Knowledge Active
+                  {isHindi ? 'शास्त्रीय आयुर्वेदिक ज्ञान सक्रिय' : 'Ayurvedic Knowledge Active'}
                 </p>
               </div>
             </div>
@@ -126,7 +137,7 @@ export default function ChatAssistant({ onExplorePlants }) {
               <div className="flex justify-start">
                 <div className="p-2.5 rounded-xl bg-[#E8E0CF]/80 border border-[#D2CFBF] text-xs text-[#556B5D] flex items-center gap-1.5">
                   <Sprout className="w-3.5 h-3.5 animate-spin text-[#285D36]" />
-                  <span>Consulting herbal texts...</span>
+                  <span>{isHindi ? 'शास्त्रीय संहिताओं से परामर्श जारी...' : 'Consulting herbal texts...'}</span>
                 </div>
               </div>
             )}
@@ -155,7 +166,7 @@ export default function ChatAssistant({ onExplorePlants }) {
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Ask about herbs or wellness..."
+              placeholder={t('chat.placeholder', 'Ask about herbs or wellness...')}
               className="flex-1 text-sm bg-white border border-[#D2CFBF] rounded-xl px-3 py-2 text-[#174B2B] outline-none focus:border-[#285D36]"
             />
             <button

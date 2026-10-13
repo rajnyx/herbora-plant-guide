@@ -3,6 +3,7 @@ import { Menu, Search, Camera, User, X, ArrowRight, Leaf } from 'lucide-react';
 import { searchPlantsLive } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSelector from './LanguageSelector';
+import herboraEmblem from '../assets/herbora-emblem.png';
 
 export default function Header({ 
   currentUser, 
@@ -69,19 +70,20 @@ export default function Header({
 
   return (
     <header className="w-full bg-[#FAF6EE]/85 backdrop-blur-md pt-5 pb-3 px-4 sm:px-8 lg:px-12 sticky top-0 z-30">
-      {/* 5.1 Top Brand Header: Centered herbora.com with twin-leaf sprout */}
+      {/* 5.1 Top Brand Header: Centered herbora.com with official logo emblem */}
       <div className="flex flex-col items-center justify-center mb-3">
         <button 
           onClick={() => setCurrentPage('home')}
           className="flex flex-col items-center group transition-transform hover:scale-[1.01] focus:outline-none cursor-pointer"
           title="Herbora Home"
         >
-          {/* Twin-leaf accent centered exactly as in reference */}
-          <div className="flex items-center justify-center text-[#6C9352] mb-0.5">
-            <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 16C12 16 10 9 4 7C4 7 10 5 12 0C12 0 14 5 20 7C20 7 14 9 12 16Z" fill="#6C9352"/>
-              <path d="M12 16C12 16 13.5 11 19 9.5C19 9.5 13.5 8 12 3C12 3 10.5 8 5 9.5C5 9.5 10.5 11 12 16Z" fill="#113E21" opacity="0.8"/>
-            </svg>
+          {/* Herbora Official Logo Emblem centered above herbora.com */}
+          <div className="flex items-center justify-center mb-1">
+            <img 
+              src={herboraEmblem} 
+              alt="Herbora Official Logo Emblem" 
+              className="w-12 h-12 sm:w-14 sm:h-14 object-contain group-hover:scale-105 transition-transform drop-shadow-xs"
+            />
           </div>
           <span className="font-serif text-3xl sm:text-4xl lg:text-[2.65rem] font-bold tracking-tight text-[#113E21] leading-none">
             {t('brand.domain')}
@@ -91,15 +93,28 @@ export default function Header({
 
       {/* 5.2 Unified Main Navigation Bar Container matching reference */}
       <div className="max-w-[1450px] mx-auto bg-[#FAF6EE]/95 border border-[#DDD6C3] rounded-2xl px-3 sm:px-4 py-2 flex items-center gap-2 sm:gap-3.5 shadow-sm backdrop-blur-sm">
-        {/* Left: Hamburger menu icon */}
-        <button
-          onClick={onOpenDrawer}
-          className="p-2 sm:p-2.5 text-[#113E21] hover:bg-[#F0E8D7] rounded-xl transition-colors cursor-pointer flex items-center justify-center"
-          aria-label="Open Navigation Menu"
-          title="Open Menu"
-        >
-          <Menu className="w-6 h-6 stroke-[2.2] text-[#113E21]" />
-        </button>
+        {/* Left: Hamburger menu icon & Top-left Herbora Logo */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button
+            onClick={onOpenDrawer}
+            className="p-2 sm:p-2.5 text-[#113E21] hover:bg-[#F0E8D7] rounded-xl transition-colors cursor-pointer flex items-center justify-center"
+            aria-label="Open Navigation Menu"
+            title="Open Menu"
+          >
+            <Menu className="w-6 h-6 stroke-[2.2] text-[#113E21]" />
+          </button>
+          <button
+            onClick={() => setCurrentPage('home')}
+            className="flex items-center gap-2 py-1 px-1.5 rounded-xl hover:bg-[#F0E8D7] transition-colors cursor-pointer group"
+            title="Herbora Home"
+          >
+            <img 
+              src={herboraEmblem} 
+              alt="Herbora" 
+              className="w-8 h-8 sm:w-8.5 sm:h-8.5 object-contain rounded-full border border-[#DDD6C3] bg-white/80 p-0.5 shadow-2xs group-hover:scale-105 transition-transform"
+            />
+          </button>
+        </div>
 
         {/* Center: Inner Search Box */}
         <div ref={searchRef} className="relative flex-1">

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, LogIn, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 import { signInWithEmail, signUpWithEmail } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialSignUp = false }) {
+  const { t, isHindi } = useLanguage();
   const [isSignUp, setIsSignUp] = useState(initialSignUp);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -128,12 +130,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialSignU
             {isSignUp ? <UserPlus className="w-6 h-6" /> : <LogIn className="w-6 h-6" />}
           </div>
           <h2 className="font-serif text-3xl font-bold text-[#174B2B]">
-            {isSignUp ? 'Join Herbora' : 'Welcome Back'}
+            {isSignUp ? t('auth.signUpTitle', 'Join Herbora') : t('auth.signInTitle', 'Welcome Back')}
           </h2>
           <p className="text-xs sm:text-sm text-[#637869] mt-1">
             {isSignUp 
-              ? 'Create an account to save plants & access your botanical library' 
-              : 'Sign in to access your personal My Plant DB'}
+              ? t('auth.signUpSubtitle', 'Create an account to save plants & access your botanical library')
+              : t('auth.signInSubtitle', 'Sign in to access your personal My Plant DB')}
           </p>
         </div>
 
@@ -157,7 +159,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialSignU
           {isSignUp && (
             <div>
               <label className="block text-xs font-semibold text-[#174B2B] uppercase tracking-wider mb-1">
-                Full Name
+                {t('auth.fullName', 'Full Name')}
               </label>
               <div className="relative flex items-center">
                 <User className="absolute left-3.5 w-4 h-4 text-[#8DA56B]" />
@@ -175,7 +177,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialSignU
 
           <div>
             <label className="block text-xs font-semibold text-[#174B2B] uppercase tracking-wider mb-1">
-              Email Address
+              {t('auth.email', 'Email Address')}
             </label>
             <div className="relative flex items-center">
               <Mail className="absolute left-3.5 w-4 h-4 text-[#8DA56B]" />
@@ -192,7 +194,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialSignU
 
           <div>
             <label className="block text-xs font-semibold text-[#174B2B] uppercase tracking-wider mb-1">
-              Password
+              {t('auth.password', 'Password')}
             </label>
             <div className="relative flex items-center">
               <Lock className="absolute left-3.5 w-4 h-4 text-[#8DA56B]" />
@@ -210,7 +212,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialSignU
           {isSignUp && (
             <div>
               <label className="block text-xs font-semibold text-[#174B2B] uppercase tracking-wider mb-1">
-                Confirm Password
+                {isHindi ? 'पासवर्ड की पुष्टि करें' : 'Confirm Password'}
               </label>
               <div className="relative flex items-center">
                 <Lock className="absolute left-3.5 w-4 h-4 text-[#8DA56B]" />
@@ -231,7 +233,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialSignU
             disabled={loading}
             className="w-full py-3 px-4 rounded-xl bg-[#174B2B] hover:bg-[#285D36] text-[#FAF7EE] font-semibold text-sm transition-all shadow-xs disabled:opacity-50 mt-2 cursor-pointer"
           >
-            {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
+            {loading ? t('common.loading', 'Processing...') : isSignUp ? t('auth.signUpBtn', 'Create Account') : t('auth.signInBtn', 'Sign In')}
           </button>
         </form>
 
@@ -239,24 +241,24 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialSignU
         <div className="mt-6 text-center text-xs text-[#637869]">
           {isSignUp ? (
             <span>
-              Already have an account?{' '}
+              {t('auth.haveAccount', 'Already have an account?')}{' '}
               <button 
                 type="button" 
                 onClick={() => switchMode(false)}
                 className="font-bold text-[#174B2B] hover:underline cursor-pointer"
               >
-                Sign In
+                {t('auth.signInLink', 'Sign In')}
               </button>
             </span>
           ) : (
             <span>
-              Don't have an account yet?{' '}
+              {t('auth.noAccount', "Don't have an account yet?")}{' '}
               <button 
                 type="button" 
                 onClick={() => switchMode(true)}
                 className="font-bold text-[#174B2B] hover:underline cursor-pointer"
               >
-                Create Account
+                {t('auth.signUpLink', 'Create one in seconds')}
               </button>
             </span>
           )}

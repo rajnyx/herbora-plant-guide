@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Lightbulb, RotateCcw, ShieldCheck, Heart, Sparkles, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import { fetchRemedies, fetchMyths } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function WellnessTipsPage() {
+  const { t, localizeRemedy, localizeMyth, isHindi } = useLanguage();
   const [remedies, setRemedies] = useState([]);
   const [myths, setMyths] = useState([]);
   const [flippedCards, setFlippedCards] = useState({});
@@ -22,10 +24,10 @@ export default function WellnessTipsPage() {
       <div className="max-w-2xl mb-10 herbora-rise">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#4E8738] mb-2">
           <Lightbulb className="w-4 h-4 text-[#4E8738]" />
-          <span>Ayurvedic Wisdom & Practical Remedies</span>
+          <span>{t('wellnessTips.badge', 'Ayurvedic Wisdom & Practical Remedies')}</span>
         </div>
         <h1 className="font-serif text-4xl sm:text-5xl font-bold text-[#113E21] leading-tight">
-          Herbal Wellness Tips
+          {t('wellnessTips.title', 'Herbal Wellness Tips')}
         </h1>
         {/* Leaf divider */}
         <div className="flex items-center gap-2 mt-2 mb-3 text-[#6C9352]">
@@ -36,19 +38,21 @@ export default function WellnessTipsPage() {
           <span className="w-8 h-[1.5px] bg-[#6C9352]/70" />
         </div>
         <p className="text-sm sm:text-base text-[#43634E] leading-relaxed">
-          Time-tested herbal preparations, safe kitchen apothecary traditions, and clear distinctions between popular wellness myths and authentic Ayurvedic principles.
+          {t('wellnessTips.subtitle', 'Time-tested herbal preparations, safe kitchen apothecary traditions, and clear distinctions between popular wellness myths and authentic Ayurvedic principles.')}
         </p>
       </div>
 
       {/* Featured Card matching Card 3 image */}
       <div className="bg-[#FFFDF8] border border-[#DDD6C3] rounded-3xl p-6 sm:p-8 mb-12 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
         <div className="md:col-span-8 space-y-3">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#4E8738]">Kitchen Apothecary Tip</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-[#4E8738]">
+            {t('wellnessTips.apothecaryBadge', 'Kitchen Apothecary Tip')}
+          </span>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#113E21]">
-            Botanical Elixirs & Carriers (Anupana)
+            {t('wellnessTips.apothecaryTitle', 'Botanical Elixirs & Carriers (Anupana)')}
           </h2>
           <p className="text-sm text-[#1F3D29] leading-relaxed">
-            In Ayurvedic pharmacology, herbs are paired with specific delivery vehicles called <em>Anupana</em>—such as warm water, raw honey, milk, or ghee—which guide the herb deep into target bodily tissues (Dhatus) for optimal assimilation.
+            {t('wellnessTips.apothecaryDesc', 'In Ayurvedic pharmacology, herbs are paired with specific delivery vehicles called Anupana—such as warm water, raw honey, milk, or ghee—which guide the herb deep into target bodily tissues (Dhatus) for optimal assimilation.')}
           </p>
         </div>
         <div className="md:col-span-4 flex justify-center">
@@ -66,42 +70,45 @@ export default function WellnessTipsPage() {
       <div className="space-y-6 mb-14">
         <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#113E21] flex items-center gap-2.5">
           <Sparkles className="w-5 h-5 text-[#4E8738]" />
-          <span>Practical Home Remedies</span>
+          <span>{t('wellnessTips.remediesTitle', 'Practical Home Remedies')}</span>
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {remedies.map((remedy) => (
-            <div 
-              key={remedy.id}
-              className="herbora-card p-6 bg-[#FFFDF8] border border-[#DDD6C3] rounded-2xl flex flex-col justify-between hover:border-[#6C9352] transition-all"
-            >
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-2xl">{remedy.icon}</span>
-                  <div>
-                    <h3 className="font-serif text-xl font-bold text-[#113E21]">
-                      {remedy.title}
-                    </h3>
-                    <span className="text-[11px] font-semibold text-[#4E8738] uppercase tracking-wide">
-                      {remedy.herb}
-                    </span>
+          {remedies.map((rawRemedy) => {
+            const remedy = localizeRemedy(rawRemedy);
+            return (
+              <div 
+                key={remedy.id}
+                className="herbora-card p-6 bg-[#FFFDF8] border border-[#DDD6C3] rounded-2xl flex flex-col justify-between hover:border-[#6C9352] transition-all"
+              >
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-2xl">{remedy.icon}</span>
+                    <div>
+                      <h3 className="font-serif text-xl font-bold text-[#113E21]">
+                        {remedy.title}
+                      </h3>
+                      <span className="text-[11px] font-semibold text-[#4E8738] uppercase tracking-wide">
+                        {remedy.herb}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5 text-xs sm:text-sm text-[#1F3D29] leading-relaxed pt-2">
+                    <p><strong className="text-[#113E21]">{t('wellnessTips.preparation', 'Preparation:')}</strong> {remedy.preparation}</p>
+                    <p><strong className="text-[#113E21]">{t('wellnessTips.traditionalBenefit', 'Traditional Benefit:')}</strong> {remedy.benefits}</p>
                   </div>
                 </div>
 
-                <div className="space-y-2.5 text-xs sm:text-sm text-[#1F3D29] leading-relaxed pt-2">
-                  <p><strong className="text-[#113E21]">Preparation:</strong> {remedy.preparation}</p>
-                  <p><strong className="text-[#113E21]">Traditional Benefit:</strong> {remedy.benefits}</p>
-                </div>
+                {remedy.safety && (
+                  <div className="mt-4 pt-3 border-t border-[#DDD6C3]/60 text-[11px] text-[#8F3A2B] font-medium flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-[#4E8738]" />
+                    <span>{t('wellnessTips.safetyNote', 'Note:')} {remedy.safety}</span>
+                  </div>
+                )}
               </div>
-
-              {remedy.safety && (
-                <div className="mt-4 pt-3 border-t border-[#DDD6C3]/60 text-[11px] text-[#8F3A2B] font-medium flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-[#4E8738]" />
-                  <span>Note: {remedy.safety}</span>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -110,19 +117,20 @@ export default function WellnessTipsPage() {
         <div className="flex items-center justify-between">
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#113E21] flex items-center gap-2.5">
             <RotateCcw className="w-5 h-5 text-[#4E8738]" />
-            <span>Myths vs. Facts</span>
+            <span>{t('wellnessTips.mythsTitle', 'Myths vs. Facts')}</span>
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {myths.map((item) => {
+          {myths.map((rawItem) => {
+            const item = localizeMyth(rawItem);
             const isFlipped = !!flippedCards[item.id];
             return (
               <div 
                 key={item.id}
                 onClick={() => toggleFlip(item.id)}
                 className="perspective-1000 h-[270px] sm:h-[240px] cursor-pointer select-none group"
-                title="Click to flip card"
+                title={t('wellnessTips.clickToFlip', 'Click to flip card')}
               >
                 <div className={`flip-card-inner ${isFlipped ? 'is-flipped' : ''}`}>
                   {/* Front Side: Common Myth */}
@@ -131,11 +139,11 @@ export default function WellnessTipsPage() {
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#FDF2F0] text-[#9E2B25] border border-[#F4C7C3] flex items-center gap-1.5 shadow-2xs">
                           <AlertCircle className="w-3 h-3 text-[#C0392B]" />
-                          <span>Common Myth</span>
+                          <span>{t('wellnessTips.commonMyth', 'Common Myth')}</span>
                         </span>
                         <span className="text-xs text-[#6C9352] group-hover:text-[#113E21] flex items-center gap-1 font-semibold transition-colors">
                           <RotateCcw className="w-3.5 h-3.5 group-hover:-rotate-90 transition-transform duration-300" />
-                          <span>Click to Flip</span>
+                          <span>{t('wellnessTips.clickToFlip', 'Click to Flip')}</span>
                         </span>
                       </div>
 
@@ -147,9 +155,9 @@ export default function WellnessTipsPage() {
                     </div>
 
                     <div className="pt-3 border-t border-[#DDD6C3]/60 flex items-center justify-between text-[11px] text-[#43634E]">
-                      <span className="italic">Click to discover Ayurvedic reality</span>
+                      <span className="italic">{t('wellnessTips.discoverReality', 'Click to discover Ayurvedic reality')}</span>
                       <span className="font-semibold text-[#4E8738] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                        <span>Reveal Fact</span>
+                        <span>{t('wellnessTips.revealFact', 'Reveal Fact')}</span>
                         <ArrowRight className="w-3 h-3" />
                       </span>
                     </div>
@@ -161,11 +169,11 @@ export default function WellnessTipsPage() {
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#E2ECD5] text-[#113E21] border border-[#BBDDC3] flex items-center gap-1.5 shadow-2xs">
                           <CheckCircle2 className="w-3 h-3 text-[#2E7D42]" />
-                          <span>Authentic Fact</span>
+                          <span>{t('wellnessTips.authenticFact', 'Authentic Fact')}</span>
                         </span>
                         <span className="text-xs text-[#4E8738] group-hover:text-[#113E21] flex items-center gap-1 font-semibold transition-colors">
                           <RotateCcw className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-300" />
-                          <span>Flip Back</span>
+                          <span>{t('wellnessTips.flipBack', 'Flip Back')}</span>
                         </span>
                       </div>
 
@@ -177,9 +185,9 @@ export default function WellnessTipsPage() {
                     </div>
 
                     <div className="pt-3 border-t border-[#BBDDC3]/60 flex items-center justify-between text-[11px] text-[#1C542E]">
-                      <span className="font-medium italic">Classical Ayurvedic Principle</span>
+                      <span className="font-medium italic">{t('wellnessTips.classicalPrinciple', 'Classical Ayurvedic Principle')}</span>
                       <span className="font-semibold text-[#113E21] flex items-center gap-1">
-                        <span>Re-read Myth</span>
+                        <span>{t('wellnessTips.rereadMyth', 'Re-read Myth')}</span>
                         <RotateCcw className="w-3 h-3" />
                       </span>
                     </div>

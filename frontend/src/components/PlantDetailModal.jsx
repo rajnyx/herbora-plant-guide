@@ -84,7 +84,7 @@ export default function PlantDetailModal({
 
               {plant.regional_names && plant.regional_names.length > 0 && (
                 <div className="text-xs text-[#637869] pt-1">
-                  <span className="font-semibold text-[#174B2B]">Other names: </span>
+                  <span className="font-semibold text-[#174B2B]">{isHindi ? 'अन्य नाम: ' : 'Other names: '}</span>
                   {plant.regional_names.join(', ')}
                 </div>
               )}

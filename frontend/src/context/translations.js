@@ -24,7 +24,7 @@ export const translations = {
       wellnessTips: "Herbal Remedies & Tips",
       wellnessTipsDesc: "Home Remedies & Myths",
       gardenPlanner: "Home Garden Planner",
-      gardenPlannerDesc: "Watering & Care Tracker",
+      gardenPlannerDesc: "Plant Care & Checklist Tracker",
       quiz: "Ayurvedic Quiz",
       quizDesc: "Test Botanical Knowledge",
       community: "Community Stories",
@@ -137,11 +137,20 @@ export const translations = {
     gardenPlanner: {
       badge: "Home Apothecary Cultivation",
       title: "Home Garden Planner",
-      subtitle: "Cultivate sacred Ayurvedic herbs in your balcony pots or backyard garden. Simple sunlight, watering, and harvesting advice for everyday green wellness.",
+      subtitle: "Nurture your personal Ayurvedic sanctuary. Keep track of plant care rhythms, sunlight parameters, and harvesting guidance for household medicinal plants.",
+      guidesTitle: "Household Herbal Care Guides",
+      checklistTitle: "Plant Care Checklist",
+      doneBadge: "Done",
+      addTaskHeading: "Add Plant Care Task",
+      taskNamePlaceholder: "e.g. Prune dry leaves / Water Balcony Tulsi",
+      taskTimePlaceholder: "Frequency (e.g. Every 2 days, Morning)",
+      addBtn: "Add",
+      deleteTooltip: "Delete Task",
       sunlight: "Sunlight:",
       watering: "Watering:",
       soil: "Soil:",
-      tips: "Care Tips:"
+      tips: "Care Tips:",
+      gardenerTip: "Gardener Tip:"
     },
     quiz: {
       badge: "Herbal Mastery Check",
@@ -287,7 +296,7 @@ export const translations = {
       wellnessTips: "नुस्खे व सुझाव",
       wellnessTipsDesc: "घरेलू नुस्खे व यथार्थ",
       gardenPlanner: "गृह वाटिका योजना",
-      gardenPlannerDesc: "पौधों की देखभाल व सिंचाई",
+      gardenPlannerDesc: "पौधों की देखभाल व कार्य-सूची",
       quiz: "आयुर्वेद प्रश्नोत्तरी",
       quizDesc: "पादप ज्ञान की परीक्षा",
       community: "समुदाय के अनुभव",
@@ -400,11 +409,20 @@ export const translations = {
     gardenPlanner: {
       badge: "घरेलू औषधालय वाटिका",
       title: "गृह वाटिका योजना",
-      subtitle: "अपनी बालकनी के गमलों या बगीचे में पवित्र आयुर्वेदिक पौधे उगाएँ। दैनिक स्वास्थ्य के लिए धूप, सिंचाई और देखभाल के सरल सुझाव।",
+      subtitle: "अपनी व्यक्तिगत आयुर्वेदिक वाटिका संवारें। घरेलू औषधीय पौधों की देखभाल, धूप, सिंचाई और कटाई के नियमों पर नज़र रखें।",
+      guidesTitle: "घरेलू हर्बल देखभाल मार्गदर्शिका",
+      checklistTitle: "पौधों की देखभाल कार्य-सूची",
+      doneBadge: "पूर्ण",
+      addTaskHeading: "नया देखभाल कार्य जोड़ें",
+      taskNamePlaceholder: "उदा. सूखे पत्ते हटाएं / तुलसी में जल दें",
+      taskTimePlaceholder: "समय / आवृत्ति (उदा. हर 2 दिन, सुबह)",
+      addBtn: "जोड़ें",
+      deleteTooltip: "कार्य हटाएं",
       sunlight: "धूप की आवश्यकता:",
       watering: "सिंचाई का नियम:",
       soil: "उपयुक्त मिट्टी:",
-      tips: "देखभाल के सुझाव:"
+      tips: "देखभाल के सुझाव:",
+      gardenerTip: "बागवान का सुझाव:"
     },
     quiz: {
       badge: "वानस्पतिक ज्ञान परीक्षा",
@@ -652,6 +670,102 @@ export const botanicalTranslations = {
       id: "myth-4",
       myth: "आप बिना किसी मार्गदर्शन के कई आयुर्वेदिक जड़ी-बूटियों को एक साथ मिला सकते हैं।",
       fact: "शास्त्रीय योग (संयोग) में जड़ी-बूटियों के बीच परस्पर सहायक या विरुद्ध गुण होते हैं। समुचित अवशोषण और संतुलन के लिए अनुभवी संयोजन आवश्यक है।"
+    }
+  ],
+  gardenPlants: {
+    "gp-1": {
+      name: "तुलसी (Holy Basil)",
+      sunlight: "पूर्ण प्रत्यक्ष धूप (प्रतिदिन 4-6 घंटे)",
+      watering: "हर 2 दिन जब ऊपर की 1 इंच मिट्टी सूखी लगे",
+      soil: "समृद्ध, हवादार पॉटिंग मिक्स",
+      tips: "घनी पत्तियों के विकास के लिए मंजरी (फूलों) को समय-समय पर हटाते रहें।"
+    },
+    "gp-2": {
+      name: "पुदीना (Spearmint)",
+      sunlight: "हल्की छाया या सुबह की हल्की धूप",
+      watering: "प्रतिदिन या जब मिट्टी की सतह सूखने लगे",
+      soil: "नमीयुक्त, जैविक खाद युक्त मिट्टी",
+      tips: "इसकी जड़ें तेज़ी से फैलती हैं, इसलिए इसे अलग गमले में उगाएं।"
+    },
+    "gp-3": {
+      name: "एलोवेरा (घृतकुमारी)",
+      sunlight: "उज्ज्वल अप्रत्यक्ष प्रकाश; तेज दोपहर की धूप से बचाएं",
+      watering: "हर 7-10 दिन; पानी देने से पहले मिट्टी को पूरी तरह सूखने दें",
+      soil: "रेत व कंकड़ युक्त कैक्टस या रसीली मिट्टी",
+      tips: "साफ चाकू से बाहरी परिपक्व पत्तियों को आधार से काटें।"
+    },
+    "gp-4": {
+      name: "ब्राह्मी (Water Hyssop)",
+      sunlight: "सुबह की आंशिक या पूरी धूप",
+      watering: "मिट्टी में निरंतर नमी बनाए रखें; पानी की ट्रे के पास अच्छा पनपता है",
+      soil: "नमी बनाए रखने वाली चिकनी या दोमट मिट्टी",
+      tips: "उथले मिट्टी के बर्तनों या बालकनी के छोटे जल कुंडों के पास उगाने के लिए उत्तम।"
+    }
+  },
+  remedies: [
+    {
+      id: "remedy-1",
+      title: "शहद एवं तुलसी की पावन चाय",
+      herb: "तुलसी (Ocimum sanctum)",
+      preparation: "उबलते पानी में ५-६ ताजी तुलसी की पत्तियां मसलकर डालें, ५ मिनट ढककर रखें, गुनगुना होने पर कच्चा शहद मिलाएं।",
+      benefits: "गले की खराश शांत करती है, श्वसन मार्ग को साफ करती है, और रोग प्रतिरोधक क्षमता को सुदृढ़ बनाती है।",
+      safety: "उबलते गर्म पानी में कभी भी शहद न मिलाएं क्योंकि चरक संहिता के अनुसार गर्म शहद 'आम' (विषाक्त तत्व) उत्पन्न करता है।"
+    },
+    {
+      id: "remedy-2",
+      title: "स्वर्ण हल्दी अमृत (गोल्डन मिल्क)",
+      herb: "हल्दी (Curcuma longa)",
+      preparation: "आधा चम्मच हल्दी पाउडर और एक चुटकी ताजी पिसी काली मिर्च को गुनगुने दूध में १/४ चम्मच देसी घी के साथ फेंटें।",
+      benefits: "जोड़ों की जकड़न दूर करता है, आंतरिक सूजन शांत करता है, और गहरी शांतिपूर्ण नींद लाता है।",
+      safety: "काली मिर्च का पिपेरिन हल्दी के करक्यूमिन का अवशोषण २०००% तक बढ़ा देता है।"
+    },
+    {
+      id: "remedy-3",
+      title: "जठराग्नि प्रदीपक अदरक क्वाथ",
+      herb: "अदरक / सोंठ (Zingiber officinale)",
+      preparation: "एक कप गर्म पानी में १ इंच कद्दूकस किया ताजा अदरक, थोड़ा नींबू का रस और एक चुटकी सेंधा नमक मिलाएं।",
+      benefits: "मंद जठराग्नि को प्रदीप्त करता है, भोजन के बाद पेट फूलना और मिचली दूर करता है।",
+      safety: "सक्रिय पेप्टिक अल्सर या अत्यधिक पित्त रक्तस्राव में इसका सेवन न करें।"
+    },
+    {
+      id: "remedy-4",
+      title: "गुलाब एवं सौंफ शीतल पेय",
+      herb: "सौंफ एवं देशी गुलाब की पंखुड़ियाँ",
+      preparation: "रातभर ठंडे पानी में १ चम्मच सौंफ और गुलाब की पंखुड़ियाँ भिगोएं। छानकर दोपहर के समय घूंट-घूंट पिएं।",
+      benefits: "अत्यधिक पित्त की गर्मी शांत करता है, सीने की जलन कम करता है, और यकृत व त्वचा को शीतलता देता है।",
+      safety: "ग्रीष्म ऋतु और मानसिक तनाव के दिनों में यह अत्यंत लाभकारी है।"
+    }
+  ],
+  quiz: [
+    {
+      id: 1,
+      question: "आयुर्वेदिक परंपरा में किस पावन पौधे को “औषधियों की रानी” के रूप में प्रतिष्ठा प्राप्त है?",
+      options: ["नीम (Nimba)", "पवित्र तुलसी (Tulsi)", "गिलोय (Guduchi)", "शतावरी (Shatavari)"],
+      explanation: "तुलसी (Ocimum sanctum) को त्रिदोष संतुलन, आध्यात्मिक पवित्रता और तनाव-रोधी गुणों के कारण औषधियों की रानी कहा जाता है।"
+    },
+    {
+      id: 2,
+      question: "अश्वगंधा (Withania somnifera) को शास्त्रीय रूप से किस प्रकार के वानस्पतिक द्रव्य के रूप में वर्गीकृत किया गया है?",
+      options: ["रसायन (कायाकल्प व बलवर्धक)", "विरेचक (पेट साफ करने वाला)", "तिक्त मूत्रल", "शीतल ज्वरनाशक"],
+      explanation: "अश्वगंधा आयुर्वेद का शीर्ष 'रसायन' द्रव्य है, जो धातुओं का पोषण करता है, वात शांत करता है और शरीर को स्वाभाविक बल प्रदान करता है।"
+    },
+    {
+      id: 3,
+      question: "हल्दी को उसका विशिष्ट सुनहरा रंग और गुणकारी प्रभाव प्रदान करने वाला मुख्य प्राकृतिक यौगिक कौन सा है?",
+      options: ["एलिसिन (Allicin)", "करक्यूमिन (Curcumin)", "यूजेनॉल (Eugenol)", "एज़ाडिराक्टिन (Azadirachtin)"],
+      explanation: "करक्यूमिन और अन्य करक्यूमिनोइड्स हल्दी के मुख्य पॉलीफेनोल्स हैं जो इसके विशिष्ट रंग और औषधीय गुणों के लिए जाने जाते हैं।"
+    },
+    {
+      id: 4,
+      question: "शास्त्रीय आयुर्वेद में “दिनचर्या” शब्द का क्या अर्थ है?",
+      options: ["ऋतु अनुसार उपवास की विधि", "हर्बल डिटॉक्स काढ़ा", "प्रकृति के साथ तालमेल बिठाने वाली दैनिक जीवनचर्या", "नाड़ी परीक्षण विधि"],
+      explanation: "दिनचर्या (दिन + चर्या = दैनिक नियम) सूर्य और प्रकृति के २४ घंटे के त्रिदोष चक्र के अनुरूप जीवन जीने की शास्त्रीय प्रणाली है।"
+    },
+    {
+      id: 5,
+      question: "मेधा, प्रज्ञा और स्मरण शक्ति के संवर्धन के लिए किस जलयुक्त पौधे को प्रमुख “मेध्य रसायन” माना गया है?",
+      options: ["ब्राह्मी (Bacopa monnieri)", "सनाय (Senna)", "मेथी (Fenugreek)", "सरसों (Mustard)"],
+      explanation: "ब्राह्मी (Bacopa monnieri) का उपयोग सदियों से ध्यान, एकाग्रता, मानसिक शांति और स्मरण शक्ति को प्रखर करने के लिए किया जाता रहा है।"
     }
   ]
 };

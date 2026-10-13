@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { X, Home, BookOpen, Bookmark, Camera, Clock, Sparkles, Sprout, HelpCircle, MessageSquare, Info, LogOut, LogIn } from 'lucide-react';
+import { X, Home, BookOpen, Bookmark, Camera, Clock, Sparkles, Sprout, HelpCircle, MessageSquare, Info, LogIn } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSelector from './LanguageSelector';
+import herboraEmblem from '../assets/herbora-emblem.png';
 
 export default function NavigationDrawer({
   isOpen,
@@ -68,9 +69,9 @@ export default function NavigationDrawer({
         <div className="p-5 border-b border-[#DDD6C3] flex items-center justify-between select-none">
           <div className="flex items-center gap-3">
             <img 
-              src="/assets/herbora-logo.png" 
-              alt="Herbora Logo" 
-              className="w-10 h-10 object-contain rounded-full border border-[#DDD6C3]"
+              src={herboraEmblem} 
+              alt="Herbora Official Logo" 
+              className="w-10 h-10 object-contain rounded-full border border-[#DDD6C3] bg-white/90 p-0.5 shadow-xs"
             />
             <div>
               <h2 className="font-serif text-2xl font-bold text-[#113E21] leading-tight">{t('brand.name')}</h2>
@@ -125,25 +126,22 @@ export default function NavigationDrawer({
         {/* Drawer Footer: User Profile / Auth State */}
         <div className="p-4 border-t border-[#DDD6C3] bg-[#FAF6EE]/80">
           {currentUser ? (
-            <div className="flex items-center justify-between">
-              <div 
-                className="truncate pr-2 cursor-pointer group"
-                onClick={() => { onClose(); if (onOpenProfile) onOpenProfile(); }}
-                title="View Profile"
-              >
-                <p className="text-xs text-[#43634E] group-hover:text-[#113E21] transition-colors">{t('nav.signedInAs')}</p>
-                <p className="text-xs font-semibold text-[#113E21] truncate group-hover:underline">
-                  {currentUser.full_name || currentUser.email}
-                </p>
+            <div 
+              className="w-full p-2.5 rounded-xl bg-white border border-[#DDD6C3] flex items-center justify-between cursor-pointer hover:border-[#113E21] hover:bg-[#FAF6EE] transition-all group"
+              onClick={() => { onClose(); if (onOpenProfile) onOpenProfile(); }}
+              title="View Profile"
+            >
+              <div className="flex items-center gap-2.5 truncate">
+                <div className="w-8 h-8 rounded-full bg-[#113E21] text-[#FAF6EE] flex items-center justify-center font-serif font-bold text-xs shrink-0">
+                  {(currentUser.full_name || currentUser.email || 'U')[0].toUpperCase()}
+                </div>
+                <div className="truncate text-left">
+                  <p className="text-[10px] text-[#4E8738] font-semibold uppercase tracking-wider leading-none mb-0.5">{t('nav.signedInAs')}</p>
+                  <p className="text-xs font-bold text-[#113E21] truncate">
+                    {currentUser.full_name || currentUser.email}
+                  </p>
+                </div>
               </div>
-              <button
-                onClick={() => { onSignOut(); onClose(); }}
-                className="flex items-center gap-1 text-xs font-medium text-[#C0392B] hover:underline px-2 py-1 rounded cursor-pointer"
-                title={t('nav.exit')}
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>{t('nav.exit')}</span>
-              </button>
             </div>
           ) : (
             <button

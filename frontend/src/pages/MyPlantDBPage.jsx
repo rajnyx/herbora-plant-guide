@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bookmark, Trash2, ArrowRight, BookOpen, LogIn, Sprout } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function MyPlantDBPage({
   currentUser,
@@ -9,6 +10,8 @@ export default function MyPlantDBPage({
   onOpenAuth,
   onNavigateToPlantopedia
 }) {
+  const { t, localizePlant, localizeCategory, isHindi } = useLanguage();
+
   // If user is not authenticated, show clear login prompt
   if (!currentUser) {
     return (
@@ -18,10 +21,10 @@ export default function MyPlantDBPage({
             <Bookmark className="w-8 h-8" />
           </div>
           <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#113E21]">
-            My Plant DB
+            {t('myPlants.title', 'My Plant DB')}
           </h1>
           <p className="text-sm text-[#43634E] mt-2 mb-6 leading-relaxed">
-            Please log in or create an account to save your favorite Ayurvedic plants, bookmark personal remedies, and build your personalized herbarium.
+            {t('myPlants.loginPrompt', 'Please log in or create an account to save your favorite Ayurvedic plants, bookmark personal remedies, and build your personalized herbarium.')}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
@@ -29,13 +32,13 @@ export default function MyPlantDBPage({
               className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-[#113E21] hover:bg-[#1C542E] text-[#FAF6EE] text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
             >
               <LogIn className="w-4 h-4" />
-              <span>Log In / Sign Up</span>
+              <span>{t('nav.signIn', 'Log In / Sign Up')}</span>
             </button>
             <button
               onClick={onNavigateToPlantopedia}
               className="w-full sm:w-auto py-2.5 px-6 rounded-full bg-white border border-[#DDD6C3] text-[#113E21] hover:bg-[#F2EAD9] text-sm font-semibold transition-all cursor-pointer"
             >
-              <span>Explore Plantopedia</span>
+              <span>{t('myPlants.exploreBtn', 'Explore Plantopedia')}</span>
             </button>
           </div>
         </div>
@@ -49,10 +52,10 @@ export default function MyPlantDBPage({
       <div className="max-w-2xl mb-8 herbora-rise">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#4E8738] mb-2">
           <Bookmark className="w-4 h-4 text-[#4E8738]" />
-          <span>Personal Herbarium</span>
+          <span>{t('myPlants.badge', 'Personal Herbarium')}</span>
         </div>
         <h1 className="font-serif text-4xl sm:text-5xl font-bold text-[#113E21] leading-tight">
-          My Plant DB
+          {t('myPlants.title', 'My Plant DB')}
         </h1>
         {/* Leaf divider */}
         <div className="flex items-center gap-2 mt-2 mb-3 text-[#6C9352]">
@@ -63,7 +66,7 @@ export default function MyPlantDBPage({
           <span className="w-8 h-[1.5px] bg-[#6C9352]/70" />
         </div>
         <p className="text-sm sm:text-base text-[#43634E] mt-2 leading-relaxed">
-          Plants you have bookmarked from Plantopedia. Review their Ayurvedic properties, cultivation notes, and traditional remedies anytime.
+          {t('myPlants.subtitle', 'Plants you have bookmarked from Plantopedia. Review their Ayurvedic properties, cultivation notes, and traditional remedies anytime.')}
         </p>
       </div>
 
@@ -74,24 +77,25 @@ export default function MyPlantDBPage({
             <Sprout className="w-8 h-8" />
           </div>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#113E21]">
-            Your personal collection is empty
+            {t('myPlants.noPlantsTitle', 'Your personal collection is empty')}
           </h2>
           <p className="text-sm text-[#43634E] mt-2 mb-6 max-w-md mx-auto leading-relaxed">
-            Browse through Herbora's Plantopedia database and click the bookmark icon on any plant to add it to your personal database.
+            {t('myPlants.noPlantsDesc', "Browse through Herbora's Plantopedia database and click the bookmark icon on any plant to add it to your personal database.")}
           </p>
           <button
             onClick={onNavigateToPlantopedia}
             className="herbora-btn-primary py-2.5 px-6 text-sm cursor-pointer"
           >
             <BookOpen className="w-4 h-4" />
-            <span>Discover Plants in Plantopedia</span>
+            <span>{t('myPlants.exploreBtn', 'Discover Plants in Plantopedia')}</span>
           </button>
         </div>
       ) : (
         /* Grid of Saved Plants */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {savedPlants.map((item) => {
-            const plant = item.plant || item;
+            const rawPlant = item.plant || item;
+            const plant = localizePlant(rawPlant);
             return (
               <div
                 key={item.id || plant.id || plant.slug}
@@ -101,12 +105,12 @@ export default function MyPlantDBPage({
                   {/* Top Bar: Category & Remove Button */}
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[11px] font-semibold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-[#E2ECD5] text-[#113E21]">
-                      {plant.category || 'Herb'}
+                      {localizeCategory(plant.category) || 'Herb'}
                     </span>
                     <button
                       onClick={() => onRemovePlant(plant.id || plant.slug)}
                       className="p-1.5 rounded-lg border border-[#F5C2BC] bg-[#FDF2F0] text-[#9E2B25] hover:bg-[#FBE7E5] transition-colors cursor-pointer"
-                      title="Remove from My Plant DB"
+                      title={t('myPlants.removeBtn', 'Remove from My Plant DB')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -130,7 +134,7 @@ export default function MyPlantDBPage({
                   </p>
                   {plant.ayurvedic_name && (
                     <p className="text-xs font-medium text-[#285D36] mt-1">
-                      Ayurvedic: <span className="font-semibold">{plant.ayurvedic_name}</span>
+                      {isHindi ? 'आयुर्वेदिक नाम:' : 'Ayurvedic:'} <span className="font-semibold">{plant.ayurvedic_name}</span>
                     </p>
                   )}
 
@@ -145,11 +149,11 @@ export default function MyPlantDBPage({
                     onClick={() => onSelectPlant(plant)}
                     className="herbora-btn-primary text-xs py-2 px-4"
                   >
-                    <span>View Details</span>
+                    <span>{t('plantopedia.viewDetails', 'View Details')}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                   <span className="text-[11px] text-[#637869]">
-                    Saved Collection
+                    {t('myPlants.badge', 'Saved Collection')}
                   </span>
                 </div>
               </div>

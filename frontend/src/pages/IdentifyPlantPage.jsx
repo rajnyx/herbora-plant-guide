@@ -1,8 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { Upload, RefreshCw, Trash2, CheckCircle, AlertTriangle, ArrowRight, Sprout, Sparkles } from 'lucide-react';
 import { identifyPlantImage } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
+import tulsiSample from '../assets/tulsi.jpg';
+import neemSample from '../assets/neem.jpg';
+import turmericSample from '../assets/turmeric.jpg';
+import ashwagandhaSample from '../assets/ashwagandha.jpg';
 
 export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
+  const { t, localizePlant, isHindi } = useLanguage();
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -12,10 +18,10 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
 
   // Sample quick test botanical photos
   const sampleHerbs = [
-    { name: 'Tulsi Leaves', hint: 'tulsi', img: '/assets/tulsi.jpg' },
-    { name: 'Neem Branch', hint: 'neem', img: '/assets/neem.jpg' },
-    { name: 'Turmeric Roots', hint: 'turmeric', img: '/assets/turmeric.jpg' },
-    { name: 'Ashwagandha Roots', hint: 'ashwagandha', img: '/assets/ashwagandha.jpg' }
+    { name: isHindi ? 'तुलसी की पत्तियां' : 'Tulsi Leaves', hint: 'tulsi', img: tulsiSample },
+    { name: isHindi ? 'नीम की टहनी' : 'Neem Branch', hint: 'neem', img: neemSample },
+    { name: isHindi ? 'हल्दी की जड़' : 'Turmeric Roots', hint: 'turmeric', img: turmericSample },
+    { name: isHindi ? 'अश्वगंधा की जड़' : 'Ashwagandha Roots', hint: 'ashwagandha', img: ashwagandhaSample }
   ];
 
   const handleFileChange = (e) => {
@@ -93,13 +99,13 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
       <div className="max-w-2xl mb-8 herbora-rise">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#8DA56B] mb-2">
           <Sparkles className="w-4 h-4" />
-          <span>AI Botanical Vision</span>
+          <span>{t('identify.badge', 'AI Botanical Vision')}</span>
         </div>
         <h1 className="font-serif text-4xl sm:text-5xl font-bold text-[#174B2B] leading-tight">
-          Identify a Plant
+          {t('identify.title', 'AI Plant Identifier')}
         </h1>
         <p className="text-sm sm:text-base text-[#556B5D] mt-2 leading-relaxed">
-          Upload an image of an unfamiliar medicinal leaf, flower, or herb. Herbora analyzes botanical features and cross-references them with our Ayurvedic Plantopedia database.
+          {t('identify.subtitle', 'Upload an image of an unfamiliar medicinal leaf, flower, or herb. Herbora analyzes botanical features and cross-references them with our Ayurvedic Plantopedia database.')}
         </p>
       </div>
 
@@ -117,10 +123,10 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
                 <Upload className="w-8 h-8" />
               </div>
               <h3 className="font-serif text-2xl font-bold text-[#174B2B]">
-                Upload or Drop Plant Photo
+                {t('identify.uploadCardTitle', 'Upload or Drop Plant Photo')}
               </h3>
               <p className="text-xs sm:text-sm text-[#637869] mt-1.5 max-w-xs mb-6">
-                Upload a clear photo of the leaf, flower, or stem for the most accurate Ayurvedic botanical identification.
+                {t('identify.uploadCardDesc', 'Upload a clear photo of the leaf, flower, or stem for the most accurate Ayurvedic botanical identification.')}
               </p>
 
               {/* Action Buttons */}
@@ -131,7 +137,7 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
                   className="herbora-btn-primary text-xs sm:text-sm py-3 px-6 cursor-pointer shadow-xs"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>Browse Photos to Identify</span>
+                  <span>{t('identify.chooseFile', 'Browse Photos to Identify')}</span>
                 </button>
               </div>
 
@@ -217,14 +223,22 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
                   key={i}
                   type="button"
                   onClick={() => handleSampleSelect(sample)}
-                  className="p-2 rounded-xl bg-white border border-[#E2DDD0] hover:border-[#8DA56B] text-left transition-all group flex flex-col items-center text-center cursor-pointer"
+                  className="p-2.5 rounded-xl bg-white border border-[#E2DDD0] hover:border-[#4E8738] hover:shadow-xs text-left transition-all group flex flex-col items-center text-center cursor-pointer active:scale-95"
+                  title={`Test botanical identification for ${sample.name}`}
                 >
-                  <img 
-                    src={sample.img} 
-                    alt={sample.name} 
-                    className="w-12 h-12 rounded-lg object-cover mb-1.5 border border-[#EAE6DC]"
-                  />
-                  <span className="text-xs font-medium text-[#174B2B] leading-tight group-hover:text-[#285D36]">
+                  <div className="w-14 h-14 rounded-lg overflow-hidden mb-2 border border-[#DDD6C3] bg-[#FAF6EE] shadow-3xs flex items-center justify-center">
+                    <img 
+                      src={sample.img} 
+                      alt={sample.name} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      loading="eager"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `/assets/${sample.hint}.jpg`;
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs font-semibold text-[#113E21] leading-tight group-hover:text-[#4E8738] transition-colors">
                     {sample.name}
                   </span>
                 </button>

@@ -113,6 +113,52 @@ export function LanguageProvider({ children }) {
     };
   };
 
+  // Helper to localize Garden Plants
+  const localizeGardenPlant = (plant) => {
+    if (!plant) return plant;
+    if (language !== 'hi') return plant;
+    const match = botanicalTranslations.gardenPlants?.[plant.id];
+    if (!match) return plant;
+    return {
+      ...plant,
+      name: match.name || plant.name,
+      sunlight: match.sunlight || plant.sunlight,
+      watering: match.watering || plant.watering,
+      soil: match.soil || plant.soil,
+      tips: match.tips || plant.tips
+    };
+  };
+
+  // Helper to localize Remedies
+  const localizeRemedy = (remedy) => {
+    if (!remedy) return remedy;
+    if (language !== 'hi') return remedy;
+    const match = botanicalTranslations.remedies?.find((r) => r.id === remedy.id);
+    if (!match) return remedy;
+    return {
+      ...remedy,
+      title: match.title || remedy.title,
+      herb: match.herb || remedy.herb,
+      preparation: match.preparation || remedy.preparation,
+      benefits: match.benefits || remedy.benefits,
+      safety: match.safety || remedy.safety
+    };
+  };
+
+  // Helper to localize Quiz questions
+  const localizeQuiz = (q) => {
+    if (!q) return q;
+    if (language !== 'hi') return q;
+    const match = botanicalTranslations.quiz?.find((item) => item.id === q.id);
+    if (!match) return q;
+    return {
+      ...q,
+      question: match.question || q.question,
+      options: match.options || q.options,
+      explanation: match.explanation || q.explanation
+    };
+  };
+
   return (
     <LanguageContext.Provider
       value={{
@@ -124,6 +170,9 @@ export function LanguageProvider({ children }) {
         localizeCategory,
         localizeMyth,
         localizeDincharya,
+        localizeGardenPlant,
+        localizeRemedy,
+        localizeQuiz,
         isHindi: language === 'hi'
       }}
     >

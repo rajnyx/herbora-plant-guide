@@ -28,8 +28,11 @@ import {
 } from './services/api';
 
 import { ArrowRight, Sparkles, Sprout, ShieldAlert, Heart, Calendar, HelpCircle, MessageSquare } from 'lucide-react';
+import { useLanguage } from './context/LanguageContext';
+import herboraLogo from './assets/herbora-logo.png';
 
 export default function App() {
+  const { t, isHindi } = useLanguage();
   const [currentPage, setCurrentPage] = useState('home');
   const [pageParams, setPageParams] = useState({});
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -303,31 +306,31 @@ export default function App() {
         <div className="max-w-[1450px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3.5">
             <img 
-              src="/assets/herbora-logo.png" 
+              src={herboraLogo} 
               alt="Official Herbora Logo" 
               className="w-14 h-14 object-contain rounded-full border border-[#D2CFBF] shadow-2xs bg-white"
             />
             <div>
-              <span className="font-serif text-2xl sm:text-3xl font-bold text-[#174B2B]">Herbora</span>
+              <span className="font-serif text-2xl sm:text-3xl font-bold text-[#174B2B]">{t('brand.name', 'Herbora')}</span>
               <p className="text-[11px] font-semibold text-[#8DA56B] tracking-widest uppercase">
-                ANCIENT WISDOM • MODERN DISCOVERY
+                {t('brand.tagline', 'ANCIENT WISDOM • MODERN DISCOVERY')}
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-5 text-xs text-[#556B5D] font-medium">
-            <button onClick={() => navigateTo('home')} className="hover:text-[#174B2B] transition-colors">Home</button>
-            <button onClick={() => navigateTo('plantopedia')} className="hover:text-[#174B2B] transition-colors">Plantopedia</button>
-            <button onClick={() => navigateTo('my-plants')} className="hover:text-[#174B2B] transition-colors">My Plant DB</button>
-            <button onClick={() => navigateTo('identify')} className="hover:text-[#174B2B] transition-colors">Identify Plant</button>
-            <button onClick={() => navigateTo('daily-wellness')} className="hover:text-[#174B2B] transition-colors">Daily Wellness</button>
-            <button onClick={() => navigateTo('quiz')} className="hover:text-[#174B2B] transition-colors">Quiz</button>
-            <button onClick={() => navigateTo('about')} className="hover:text-[#174B2B] transition-colors">About & Disclaimer</button>
+            <button onClick={() => navigateTo('home')} className="hover:text-[#174B2B] transition-colors">{t('nav.home', 'Home')}</button>
+            <button onClick={() => navigateTo('plantopedia')} className="hover:text-[#174B2B] transition-colors">{t('nav.plantopedia', 'Plantopedia')}</button>
+            <button onClick={() => navigateTo('my-plants')} className="hover:text-[#174B2B] transition-colors">{t('nav.myPlants', 'My Plant DB')}</button>
+            <button onClick={() => navigateTo('identify')} className="hover:text-[#174B2B] transition-colors">{t('nav.identify', 'Identify Plant')}</button>
+            <button onClick={() => navigateTo('daily-wellness')} className="hover:text-[#174B2B] transition-colors">{t('nav.dailyWellness', 'Daily Wellness')}</button>
+            <button onClick={() => navigateTo('quiz')} className="hover:text-[#174B2B] transition-colors">{t('nav.quiz', 'Quiz')}</button>
+            <button onClick={() => navigateTo('about')} className="hover:text-[#174B2B] transition-colors">{t('nav.about', 'About & Disclaimer')}</button>
           </div>
 
           <p className="text-xs text-[#8A9E8F] text-center md:text-right">
-            © {new Date().getFullYear()} Herbora • Ancient Wisdom & Modern Discovery<br />
-            Educational botanical reference.
+            © {new Date().getFullYear()} Herbora • {isHindi ? 'प्राचीन ज्ञान • आधुनिक खोज' : 'Ancient Wisdom & Modern Discovery'}<br />
+            {t('footer.disclaimer', 'Educational botanical reference.')}
           </p>
         </div>
       </footer>

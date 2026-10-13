@@ -27,8 +27,10 @@ import {
   submitPostComment,
   deletePostComment
 } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function CommunityPage({ currentUser, onOpenAuth }) {
+  const { t, isHindi } = useLanguage();
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,9 +97,14 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
   }, [currentUser]);
 
   // Persist liked post IDs to localStorage whenever updated
-  const markPostAsLiked = (postId) => {
+  const togglePostLikedState = (postId, willBeLiked) => {
     setLikedPostIds((prev) => {
-      const updated = new Set([...prev, postId]);
+      const updated = new Set(prev);
+      if (willBeLiked) {
+        updated.add(postId);
+      } else {
+        updated.delete(postId);
+      }
       try {
         localStorage.setItem('herbora_liked_posts', JSON.stringify([...updated]));
       } catch (e) {
@@ -164,31 +171,52 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
     }
   };
 
-  // Like a post only once
+  // Toggle like: First click on heart -> like; second click on heart -> dislike / unlike
   const handleLike = async (postId) => {
-    if (likedPostIds.has(postId)) {
-      return; // Already liked by this user/browser
-    }
+    const isCurrentlyLiked = likedPostIds.has(postId);
+    const nextLikedState = !isCurrentlyLiked;
 
-    // Optimistically mark as liked and increment count
-    markPostAsLiked(postId);
+    // Optimistically toggle heart state and update like count
+    togglePostLikedState(postId, nextLikedState);
     setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId ? { ...p, likes_count: (p.likes_count || 0) + 1 } : p
-      )
+      prev.map((p) => {
+        if (p.id !== postId) return p;
+        const currentLikes = p.likes_count || 0;
+        return {
+          ...p,
+          likes_count: nextLikedState ? currentLikes + 1 : Math.max(0, currentLikes - 1)
+        };
+      })
     );
 
     try {
       const res = await likeCommunityPost(postId, currentUser?.id);
-      if (res && typeof res.likes_count === 'number') {
-        setPosts((prev) =>
-          prev.map((p) =>
-            p.id === postId ? { ...p, likes_count: res.likes_count } : p
-          )
-        );
+      if (res) {
+        if (typeof res.liked === 'boolean') {
+          togglePostLikedState(postId, res.liked);
+        }
+        if (typeof res.likes_count === 'number') {
+          setPosts((prev) =>
+            prev.map((p) =>
+              p.id === postId ? { ...p, likes_count: res.likes_count } : p
+            )
+          );
+        }
       }
     } catch (err) {
-      console.error('Error liking post:', err);
+      console.error('Error toggling like on post:', err);
+      // Revert optimistic state on failure
+      togglePostLikedState(postId, isCurrentlyLiked);
+      setPosts((prev) =>
+        prev.map((p) => {
+          if (p.id !== postId) return p;
+          const currentLikes = p.likes_count || 0;
+          return {
+            ...p,
+            likes_count: isCurrentlyLiked ? currentLikes + 1 : Math.max(0, currentLikes - 1)
+          };
+        })
+      );
     }
   };
 
@@ -347,10 +375,10 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
       <div className="max-w-3xl mb-8 herbora-rise">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#4E8738] mb-2">
           <MessageSquare className="w-4 h-4 text-[#4E8738]" />
-          <span>Ayurvedic Herbal Community</span>
+          <span>{t('community.badge', 'Ayurvedic Herbal Community')}</span>
         </div>
         <h1 className="font-serif text-3xl sm:text-5xl font-bold text-[#113E21] leading-tight">
-          Grower & Learner Stories
+          {t('community.title', 'Grower & Learner Stories')}
         </h1>
 
         {/* Leaf divider */}
@@ -363,7 +391,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
         </div>
 
         <p className="text-sm sm:text-base text-[#43634E] leading-relaxed">
-          Explore botanical wisdom, cultivation tips, and traditional wellness observations from herbalists and balcony gardeners worldwide. Read freely, join the conversation, or share your own observations.
+          {t('community.subtitle', 'Explore botanical wisdom, cultivation tips, and traditional wellness observations from herbalists and balcony gardeners worldwide. Read freely, join the conversation, or share your own observations.')}
         </p>
       </div>
 
@@ -408,7 +436,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                   : 'text-[#43634E] hover:text-[#113E21]'
               }`}
             >
-              All Notes ({posts.length})
+              {t('community.allNotes', 'All Notes')} ({posts.length})
             </button>
             {currentUser && (
               <button
@@ -419,7 +447,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                     : 'text-[#43634E] hover:text-[#113E21]'
                 }`}
               >
-                <span>My Notes</span>
+                <span>{t('community.myNotes', 'My Notes')}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                   activeTab === 'my-posts' ? 'bg-[#FAF6EE] text-[#113E21]' : 'bg-[#E2ECD5] text-[#113E21]'
                 }`}>
@@ -436,7 +464,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search herbs or notes..."
+              placeholder={t('community.searchPlaceholder', 'Search herbs or notes...')}
               className="pl-8 pr-3 py-1.5 text-xs rounded-xl bg-white border border-[#DDD6C3] text-[#113E21] outline-none focus:border-[#113E21] w-40 sm:w-48 transition-all"
             />
           </div>
@@ -451,12 +479,12 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
             {showComposer && currentUser ? (
               <>
                 <X className="w-4 h-4" />
-                <span>Close Composer</span>
+                <span>{t('community.closeComposer', 'Close Composer')}</span>
               </>
             ) : (
               <>
                 <Sprout className="w-4 h-4 text-[#8FA77B]" />
-                <span>Share Community Post</span>
+                <span>{t('community.sharePost', 'Share Community Post')}</span>
               </>
             )}
           </button>
@@ -470,7 +498,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
             <div className="flex items-center gap-2">
               <Sprout className="w-5 h-5 text-[#4E8738]" />
               <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#113E21]">
-                Share Your Herbal Story
+                {t('community.shareStoryTitle', 'Share Your Herbal Story')}
               </h2>
             </div>
             <button
@@ -492,27 +520,27 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-[#113E21] uppercase tracking-wider mb-1">
-                  Your Name / Contributor Name
+                  {isHindi ? 'आपका नाम / योगदानकर्ता का नाम' : 'Your Name / Contributor Name'}
                 </label>
                 <input
                   type="text"
                   value={authorName}
                   onChange={(e) => setAuthorName(e.target.value)}
-                  placeholder="e.g. Ananya Sharma"
+                  placeholder={isHindi ? 'उदा. अनन्या शर्मा' : 'e.g. Ananya Sharma'}
                   className="w-full text-sm h-11 px-3.5 rounded-xl bg-white border border-[#DDD6C3] text-[#113E21] outline-none focus:border-[#113E21] transition-all"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-[#113E21] uppercase tracking-wider mb-1">
-                  Plant or Herb Name
+                  {isHindi ? 'पौधे या जड़ी-बूटी का नाम' : 'Plant or Herb Name'}
                 </label>
                 <input
                   type="text"
                   required
                   value={plantName}
                   onChange={(e) => setPlantName(e.target.value)}
-                  placeholder="e.g. Tulsi, Ashwagandha, Neem, Brahmi"
+                  placeholder={isHindi ? 'उदा. तुलसी, अश्वगंधा, नीम, ब्राह्मी' : 'e.g. Tulsi, Ashwagandha, Neem, Brahmi'}
                   className="w-full text-sm h-11 px-3.5 rounded-xl bg-white border border-[#DDD6C3] text-[#113E21] outline-none focus:border-[#113E21] transition-all"
                 />
               </div>
@@ -520,14 +548,14 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
 
             <div>
               <label className="block text-xs font-semibold text-[#113E21] uppercase tracking-wider mb-1">
-                Your Story, Observation, or Traditional Recipe
+                {isHindi ? 'आपका अनुभव, अवलोकन या पारंपरिक नुस्खा' : 'Your Story, Observation, or Traditional Recipe'}
               </label>
               <textarea
                 required
                 rows={4}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Share how you grow it, seasonal care tips, soil mix, or how you prepare daily teas and remedies..."
+                placeholder={isHindi ? 'साझा करें कि आप इसे कैसे उगाते हैं, मौसमी देखभाल, मिट्टी का मिश्रण, या दैनिक काढ़ा/नुस्खा कैसे तैयार करते हैं...' : 'Share how you grow it, seasonal care tips, soil mix, or how you prepare daily teas and remedies...'}
                 className="w-full text-sm p-3.5 rounded-xl bg-white border border-[#DDD6C3] text-[#113E21] outline-none focus:border-[#113E21] resize-none transition-all"
               />
             </div>
@@ -538,7 +566,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                 onClick={() => setShowComposer(false)}
                 className="px-4 py-2.5 rounded-xl border border-[#DDD6C3] text-xs font-semibold text-[#43634E] hover:bg-[#FAF6EE] cursor-pointer"
               >
-                Cancel
+                {isHindi ? 'रद्द करें' : 'Cancel'}
               </button>
               <button
                 type="submit"
@@ -546,7 +574,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                 className="herbora-btn-primary py-2.5 px-6 text-xs sm:text-sm font-semibold flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
-                <span>{submittingPost ? 'Publishing...' : 'Publish to Community'}</span>
+                <span>{submittingPost ? (isHindi ? 'प्रकाशित हो रहा है...' : 'Publishing...') : (isHindi ? 'समुदाय में प्रकाशित करें' : 'Publish to Community')}</span>
               </button>
             </div>
           </form>
@@ -606,7 +634,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                         </span>
                         {isOwner && (
                           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#E2ECD5] text-[#113E21]">
-                            You
+                            {isHindi ? 'आप' : 'You'}
                           </span>
                         )}
                       </div>
@@ -646,7 +674,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                   <div className="p-3.5 rounded-2xl bg-[#FDF2F0] border border-[#F4C7C3] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-2 text-xs text-[#A82C2C] font-semibold">
                       <AlertCircle className="w-4 h-4 shrink-0" />
-                      <span>Delete this community story permanently?</span>
+                      <span>{isHindi ? 'क्या आप इस समुदाय अनुभव को स्थायी रूप से हटाना चाहते हैं?' : 'Delete this community story permanently?'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -654,14 +682,14 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                         disabled={deleteLoading}
                         className="px-3.5 py-1.5 rounded-xl bg-[#C0392B] hover:bg-[#A82C2C] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
                       >
-                        {deleteLoading ? 'Deleting...' : 'Yes, Delete'}
+                        {deleteLoading ? (isHindi ? 'हटाया जा रहा है...' : 'Deleting...') : (isHindi ? 'हाँ, हटाएं' : 'Yes, Delete')}
                       </button>
                       <button
                         onClick={handleCancelDelete}
                         disabled={deleteLoading}
                         className="px-3.5 py-1.5 rounded-xl bg-white border border-[#DDD6C3] text-[#43634E] text-xs font-medium hover:bg-[#FAF6EE] cursor-pointer"
                       >
-                        Cancel
+                        {isHindi ? 'रद्द करें' : 'Cancel'}
                       </button>
                     </div>
                   </div>
@@ -678,7 +706,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                     )}
                     <div>
                       <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#4E8738] mb-1">
-                        Herb / Plant Name
+                        {isHindi ? 'पौधे / जड़ी-बूटी का नाम' : 'Herb / Plant Name'}
                       </label>
                       <input
                         type="text"
@@ -689,7 +717,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                     </div>
                     <div>
                       <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#4E8738] mb-1">
-                        Observation / Story
+                        {isHindi ? 'अवलोकन / अनुभव' : 'Observation / Story'}
                       </label>
                       <textarea
                         rows={3}
@@ -705,14 +733,14 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                         className="herbora-btn-primary py-1.5 px-4 text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                       >
                         <Check className="w-3.5 h-3.5" />
-                        <span>{editLoading ? 'Saving...' : 'Save Changes'}</span>
+                        <span>{editLoading ? (isHindi ? 'सहेजा जा रहा है...' : 'Saving...') : (isHindi ? 'बदलाव सहेजें' : 'Save Changes')}</span>
                       </button>
                       <button
                         onClick={handleCancelEdit}
                         disabled={editLoading}
                         className="py-1.5 px-3.5 rounded-xl bg-white border border-[#DDD6C3] text-[#43634E] hover:bg-[#FAF6EE] text-xs font-medium cursor-pointer"
                       >
-                        Cancel
+                        {isHindi ? 'रद्द करें' : 'Cancel'}
                       </button>
                     </div>
                   </div>
@@ -725,21 +753,24 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                 {/* Footer Reactions & Comment Toggle Bar */}
                 <div className="pl-1 sm:pl-13 pt-3 border-t border-[#DDD6C3]/60 flex flex-wrap items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-2.5">
-                    {/* Like button (single-like only) */}
+                    {/* Like button (first click -> like, second click -> dislike / unlike) */}
                     <button
                       onClick={() => handleLike(post.id)}
-                      disabled={isLiked}
-                      title={isLiked ? "You've already liked this note" : "Like this note"}
-                      className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl border transition-all cursor-pointer ${
+                      title={
                         isLiked
-                          ? 'bg-[#FDF2F0] border-[#F4C7C3] text-[#C0392B] font-semibold cursor-default'
+                          ? (isHindi ? 'डिसलाइक / अनलाइक करने के लिए क्लिक करें' : 'Click heart to dislike / unlike note')
+                          : (isHindi ? 'पसंद करने के लिए क्लिक करें' : 'Click heart to like note')
+                      }
+                      className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl border transition-all cursor-pointer active:scale-95 ${
+                        isLiked
+                          ? 'bg-[#FDF2F0] border-[#F4C7C3] text-[#C0392B] font-semibold hover:bg-[#FBE8E6]'
                           : 'bg-white border-[#DDD6C3] text-[#43634E] hover:border-[#4E8738] hover:text-[#113E21] hover:bg-[#FAF6EE]'
                       }`}
                     >
                       <Heart className={`w-3.5 h-3.5 transition-transform ${isLiked ? 'fill-current text-[#C0392B] scale-110' : ''}`} />
                       <span>{post.likes_count || 0}</span>
                       <span className="hidden sm:inline text-[11px] font-normal">
-                        {isLiked ? 'Liked' : (post.likes_count === 1 ? 'like' : 'likes')}
+                        {isLiked ? (isHindi ? 'पसंद किया' : 'Liked') : (post.likes_count === 1 ? (isHindi ? 'पसंद' : 'like') : (isHindi ? 'पसंद' : 'likes'))}
                       </span>
                     </button>
 
@@ -766,7 +797,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                   </div>
 
                   <span className="text-[11px] text-[#6C9352] italic">
-                    Ayurvedic Community Wisdom
+                    {isHindi ? 'आयुर्वेदिक समुदाय का ज्ञान' : 'Ayurvedic Community Wisdom'}
                   </span>
                 </div>
 
@@ -776,7 +807,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                     <div className="flex items-center justify-between text-xs font-semibold text-[#113E21]">
                       <span className="flex items-center gap-1.5">
                         <MessageSquare className="w-3.5 h-3.5 text-[#4E8738]" />
-                        <span>Discussion & Replies ({postComments.length})</span>
+                        <span>{isHindi ? `चर्चा व टिप्पणियाँ (${postComments.length})` : `Discussion & Replies (${postComments.length})`}</span>
                       </span>
                     </div>
 
@@ -784,7 +815,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                     <div className="space-y-3">
                       {postComments.length === 0 ? (
                         <div className="p-4 rounded-2xl bg-[#FAF6EE]/80 border border-[#DDD6C3]/70 text-center text-xs text-[#43634E]">
-                          No comments yet. Share your experience or questions with this grower!
+                          {isHindi ? 'अभी कोई टिप्पणी नहीं है। इस बागवान के साथ अपना अनुभव या प्रश्न साझा करें!' : 'No comments yet. Share your experience or questions with this grower!'}
                         </div>
                       ) : (
                         postComments.map((comment) => {
@@ -855,8 +886,10 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                           }}
                           placeholder={
                             currentUser
-                              ? `Add a comment as ${currentUser.user_metadata?.full_name || currentUser.name || currentUser.email?.split('@')[0]}...`
-                              : 'Log in to join the conversation...'
+                              ? (isHindi 
+                                  ? `${currentUser.user_metadata?.full_name || currentUser.name || currentUser.email?.split('@')[0]} के रूप में टिप्पणी जोड़ें...` 
+                                  : `Add a comment as ${currentUser.user_metadata?.full_name || currentUser.name || currentUser.email?.split('@')[0]}...`)
+                              : (isHindi ? 'बातचीत में शामिल होने के लिए लॉगिन करें...' : 'Log in to join the conversation...')
                           }
                           className="flex-1 text-xs h-10 px-3.5 rounded-xl bg-white border border-[#DDD6C3] text-[#113E21] outline-none focus:border-[#113E21] transition-all"
                         />
@@ -868,7 +901,7 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
                         >
                           <Send className="w-3.5 h-3.5" />
                           <span className="hidden sm:inline">
-                            {submittingComment[post.id] ? 'Posting...' : 'Post'}
+                            {submittingComment[post.id] ? (isHindi ? 'भेजा जा रहा है...' : 'Posting...') : (isHindi ? 'टिप्पणी करें' : 'Post')}
                           </span>
                         </button>
                       </div>

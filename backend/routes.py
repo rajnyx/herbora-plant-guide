@@ -554,19 +554,23 @@ def like_post(post_id):
         ).first()
 
         if existing_like:
+            # Second like on heart -> dislike / remove like
+            db.delete(existing_like)
+            post.likes_count = max(0, (post.likes_count or 0) - 1)
+            db.commit()
             return jsonify({
-                "already_liked": True,
-                "likes_count": post.likes_count or 0,
-                "message": "You have already liked this note."
+                "liked": False,
+                "likes_count": post.likes_count,
+                "message": "Disliked / unliked note"
             }), 200
 
-        # Record new like
+        # First like on heart -> like note
         new_like = PostLike(post_id=post_id, user_id=user_id)
         db.add(new_like)
         post.likes_count = (post.likes_count or 0) + 1
         db.commit()
         return jsonify({
-            "already_liked": False,
+            "liked": True,
             "likes_count": post.likes_count,
             "message": "Liked successfully"
         }), 200

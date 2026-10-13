@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { HelpCircle, CheckCircle2, XCircle, RotateCcw, Award, ArrowRight, Sparkles } from 'lucide-react';
 import { fetchQuiz } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function QuizPage() {
+  const { t, localizeQuiz, isHindi } = useLanguage();
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -14,7 +16,8 @@ export default function QuizPage() {
     fetchQuiz().then(setQuestions).catch(() => {});
   }, []);
 
-  const currentQ = questions[currentIndex];
+  const rawQ = questions[currentIndex];
+  const currentQ = rawQ ? localizeQuiz(rawQ) : null;
 
   const handleSelect = (idx) => {
     if (isAnswered) return;
@@ -48,7 +51,7 @@ export default function QuizPage() {
     return (
       <div className="w-full max-w-xl mx-auto px-4 py-20 text-center text-[#556B5D]">
         <Sparkles className="w-8 h-8 animate-spin mx-auto text-[#8DA56B] mb-2" />
-        <p className="font-serif text-xl">Loading Ayurvedic Quiz...</p>
+        <p className="font-serif text-xl">{t('common.loading', 'Loading Ayurvedic Quiz...')}</p>
       </div>
     );
   }
@@ -59,10 +62,10 @@ export default function QuizPage() {
       <div className="text-center max-w-xl mx-auto mb-10 herbora-rise">
         <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#4E8738] mb-2">
           <HelpCircle className="w-4 h-4 text-[#4E8738]" />
-          <span>Ayurvedic Wisdom Test</span>
+          <span>{t('quiz.badge', 'Ayurvedic Wisdom Test')}</span>
         </div>
         <h1 className="font-serif text-4xl sm:text-5xl font-bold text-[#113E21] leading-tight">
-          Botanical Knowledge Quiz
+          {t('quiz.title', 'Botanical Knowledge Quiz')}
         </h1>
         {/* Leaf divider */}
         <div className="flex items-center justify-center gap-2 mt-2 mb-3 text-[#6C9352]">
@@ -73,7 +76,7 @@ export default function QuizPage() {
           <span className="w-8 h-[1.5px] bg-[#6C9352]/70" />
         </div>
         <p className="text-sm text-[#43634E] leading-relaxed">
-          Test your familiarity with classical Rasayanas, Ayurvedic terminology, and medicinal plant applications.
+          {t('quiz.subtitle', 'Test your familiarity with classical Rasayanas, Ayurvedic terminology, and medicinal plant applications.')}
         </p>
       </div>
 
@@ -82,8 +85,12 @@ export default function QuizPage() {
         <div className="bg-[#FFFDF8] border border-[#DDD6C3] rounded-3xl p-6 sm:p-8 shadow-sm herbora-rise space-y-6">
           {/* Progress Bar */}
           <div className="flex items-center justify-between text-xs text-[#43634E] font-medium mb-1">
-            <span>Question {currentIndex + 1} of {questions.length}</span>
-            <span className="font-semibold text-[#113E21]">Score: {score}</span>
+            <span>
+              {t('quiz.questionPrefix', 'Question')} {currentIndex + 1} {t('quiz.of', 'of')} {questions.length}
+            </span>
+            <span className="font-semibold text-[#113E21]">
+              {isHindi ? 'अंक' : 'Score'}: {score}
+            </span>
           </div>
           <div className="w-full h-2 rounded-full bg-[#EAE6DC] overflow-hidden">
             <div 
@@ -134,7 +141,9 @@ export default function QuizPage() {
           {/* Explanation Box */}
           {isAnswered && (
             <div className="p-4 rounded-xl bg-[#E2ECD5]/60 border border-[#6C9352]/40 text-xs sm:text-sm text-[#113E21] leading-relaxed herbora-rise">
-              <strong className="block mb-1 text-[#113E21] font-bold">Ayurvedic Insight:</strong>
+              <strong className="block mb-1 text-[#113E21] font-bold">
+                {t('quiz.explanation', 'Classical Wisdom Explanation:')}
+              </strong>
               {currentQ.explanation}
             </div>
           )}
@@ -146,7 +155,7 @@ export default function QuizPage() {
                 onClick={handleNext}
                 className="herbora-btn-primary py-2.5 px-6 text-sm cursor-pointer"
               >
-                <span>{currentIndex + 1 < questions.length ? 'Next Question' : 'Complete Quiz'}</span>
+                <span>{currentIndex + 1 < questions.length ? t('quiz.nextQuestion', 'Next Question') : t('quiz.seeResults', 'See Results')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -160,19 +169,23 @@ export default function QuizPage() {
           </div>
 
           <div>
-            <h2 className="font-serif text-3xl font-bold text-[#113E21]">Quiz Completed!</h2>
+            <h2 className="font-serif text-3xl font-bold text-[#113E21]">{t('quiz.scoreTitle', 'Quiz Completed!')}</h2>
             <p className="text-sm text-[#43634E] mt-1">
-              You scored <span className="font-bold text-xl text-[#113E21]">{score}</span> out of {questions.length}
+              {isHindi ? (
+                <>आपने {questions.length} में से <span className="font-bold text-xl text-[#113E21]">{score}</span> अंक प्राप्त किए</>
+              ) : (
+                <>You scored <span className="font-bold text-xl text-[#113E21]">{score}</span> out of {questions.length}</>
+              )}
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-white border border-[#DDD6C3] text-xs text-[#1F3D29] leading-relaxed">
             {score === questions.length ? (
-              <span>🌿 Outstanding! You possess deep familiarity with traditional Ayurvedic botanical wisdom!</span>
+              <span>🌿 {t('quiz.scoreRemarkGreat', 'Outstanding! You possess deep familiarity with traditional Ayurvedic botanical wisdom!')}</span>
             ) : score >= 3 ? (
-              <span>🌱 Well done! You have a solid grasp of core Ayurvedic plants and practices.</span>
+              <span>🌱 {t('quiz.scoreRemarkGood', 'Well done! You have a solid grasp of core Ayurvedic plants and practices.')}</span>
             ) : (
-              <span>🍃 A great beginning! Explore Herbora's Plantopedia to discover more about Ayurvedic herbs.</span>
+              <span>🍃 {t('quiz.scoreRemarkLearn', "A great beginning! Explore Herbora's Plantopedia to discover more about Ayurvedic herbs.")}</span>
             )}
           </div>
 
@@ -181,7 +194,7 @@ export default function QuizPage() {
             className="herbora-btn-primary py-3 px-6 mx-auto cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
-            <span>Retake Quiz</span>
+            <span>{t('quiz.retakeQuiz', 'Retake Quiz')}</span>
           </button>
         </div>
       )}

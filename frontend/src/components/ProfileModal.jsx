@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X, User, Mail, Bookmark, LogOut, ArrowRightLeft, Sprout, Calendar, ShieldCheck, ArrowRight, MessageSquare } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function ProfileModal({
   isOpen,
@@ -10,6 +11,7 @@ export default function ProfileModal({
   onSignOut,
   onSwitchAccount
 }) {
+  const { t, isHindi } = useLanguage();
   // Lock background scroll when profile modal is open
   useEffect(() => {
     if (!isOpen) return;
@@ -84,7 +86,7 @@ export default function ProfileModal({
 
           <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D8E1C3] text-[#174B2B] text-xs font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-[#285D36]" />
-            <span>Herbora Member • Since {memberSince}</span>
+            <span>{isHindi ? `हर्बोरा सदस्य • ${memberSince} से` : `Herbora Member • Since ${memberSince}`}</span>
           </div>
         </div>
 
@@ -96,9 +98,9 @@ export default function ProfileModal({
                 <Bookmark className="w-4.5 h-4.5" />
               </div>
               <div>
-                <p className="text-[11px] font-semibold text-[#8DA56B] uppercase tracking-wider">My Plant DB</p>
+                <p className="text-[11px] font-semibold text-[#8DA56B] uppercase tracking-wider">{t('nav.myPlants', 'My Plant DB')}</p>
                 <p className="text-xs sm:text-sm font-bold text-[#174B2B]">
-                  {savedPlantsCount} {savedPlantsCount === 1 ? 'Plant Saved' : 'Plants Saved'}
+                  {savedPlantsCount} {isHindi ? 'पौधे सहेजे गए' : (savedPlantsCount === 1 ? 'Plant Saved' : 'Plants Saved')}
                 </p>
               </div>
             </div>
@@ -109,7 +111,7 @@ export default function ProfileModal({
               }}
               className="text-xs font-semibold text-[#285D36] hover:text-[#174B2B] flex items-center gap-1 py-1.5 px-2.5 rounded-lg hover:bg-[#E8E0CF]/50 transition-colors cursor-pointer"
             >
-              <span>View DB</span>
+              <span>{t('profile.viewCollection', 'View DB')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -120,9 +122,9 @@ export default function ProfileModal({
                 <MessageSquare className="w-4.5 h-4.5" />
               </div>
               <div>
-                <p className="text-[11px] font-semibold text-[#8DA56B] uppercase tracking-wider">Community Posts</p>
+                <p className="text-[11px] font-semibold text-[#8DA56B] uppercase tracking-wider">{t('nav.community', 'Community Posts')}</p>
                 <p className="text-xs sm:text-sm font-bold text-[#174B2B]">
-                  Manage Your Stories
+                  {isHindi ? 'अपने अनुभव प्रबंधित करें' : 'Manage Your Stories'}
                 </p>
               </div>
             </div>
@@ -133,7 +135,7 @@ export default function ProfileModal({
               }}
               className="text-xs font-semibold text-[#285D36] hover:text-[#174B2B] flex items-center gap-1 py-1.5 px-2.5 rounded-lg hover:bg-[#E8E0CF]/50 transition-colors cursor-pointer"
             >
-              <span>View</span>
+              <span>{isHindi ? 'देखें' : 'View'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -151,7 +153,7 @@ export default function ProfileModal({
           >
             <div className="flex items-center gap-2.5">
               <ArrowRightLeft className="w-4 h-4 text-[#8DA56B] group-hover:rotate-180 transition-transform duration-300" />
-              <span>Log in to another account</span>
+              <span>{t('profile.switchAccount', 'Log in to another account')}</span>
             </div>
             <ArrowRight className="w-4 h-4 text-[#8DA56B] group-hover:translate-x-0.5 transition-transform" />
           </button>
@@ -165,7 +167,7 @@ export default function ProfileModal({
             className="w-full py-3 px-4 rounded-xl bg-[#FFF9F9] border border-[#F5C2BC] hover:bg-[#FDF2F0] text-[#9E2B25] font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
           >
             <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
+            <span>{t('profile.signOut', 'Sign Out')}</span>
           </button>
         </div>
 
