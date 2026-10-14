@@ -39,9 +39,9 @@ export default function HeroSection() {
               </>
             ) : (
               <>
-                Herbora – because<br className="hidden sm:inline" />
-                every herb has a purpose<br className="hidden sm:inline" />
-                and every learner has a<br className="hidden sm:inline" />
+                Herbora – because <br className="hidden sm:inline" />
+                every herb has a purpose <br className="hidden sm:inline" />
+                and every learner has a <br className="hidden sm:inline" />
                 journey.”
               </>
             )}
