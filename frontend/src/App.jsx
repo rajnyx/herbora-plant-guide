@@ -29,7 +29,7 @@ import {
 
 import { ArrowRight, Sparkles, Sprout, ShieldAlert, Heart, Calendar, HelpCircle, MessageSquare } from 'lucide-react';
 import { useLanguage } from './context/LanguageContext';
-import herboraLogo from './assets/herbora-logo.png';
+import HerboraEmblem from './components/HerboraEmblem';
 
 export default function App() {
   const { t, isHindi } = useLanguage();
@@ -305,10 +305,10 @@ export default function App() {
       <footer className="w-full bg-[#FAF7EE] border-t border-[#D2CFBF] py-12 px-4 sm:px-8 lg:px-12 mt-16">
         <div className="max-w-[1450px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3.5">
-            <img 
-              src={herboraLogo} 
+            <HerboraEmblem 
+              className="w-14 h-14" 
               alt="Official Herbora Logo" 
-              className="w-14 h-14 object-contain rounded-full border border-[#D2CFBF] shadow-2xs bg-white"
+              showBorder={true}
             />
             <div>
               <span className="font-serif text-2xl sm:text-3xl font-bold text-[#174B2B]">{t('brand.name', 'Herbora')}</span>

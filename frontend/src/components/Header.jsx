@@ -3,7 +3,7 @@ import { Menu, Search, Camera, User, X, ArrowRight, Leaf } from 'lucide-react';
 import { searchPlantsLive } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSelector from './LanguageSelector';
-import herboraEmblem from '../assets/herbora-emblem.png';
+import HerboraEmblem from './HerboraEmblem';
 
 export default function Header({ 
   currentUser, 
@@ -79,10 +79,10 @@ export default function Header({
         >
           {/* Herbora Official Logo Emblem centered above herbora.com */}
           <div className="flex items-center justify-center mb-1">
-            <img 
-              src={herboraEmblem} 
-              alt="Herbora Official Logo Emblem" 
-              className="w-12 h-12 sm:w-14 sm:h-14 object-contain group-hover:scale-105 transition-transform drop-shadow-xs"
+            <HerboraEmblem 
+              className="w-12 h-12 sm:w-14 sm:h-14" 
+              alt="Herbora Official Logo Emblem"
+              priority={true} 
             />
           </div>
           <span className="font-serif text-3xl sm:text-4xl lg:text-[2.65rem] font-bold tracking-tight text-[#113E21] leading-none">
@@ -108,10 +108,10 @@ export default function Header({
             className="flex items-center gap-2 py-1 px-1.5 rounded-xl hover:bg-[#F0E8D7] transition-colors cursor-pointer group"
             title="Herbora Home"
           >
-            <img 
-              src={herboraEmblem} 
+            <HerboraEmblem 
+              className="w-8 h-8 sm:w-8.5 sm:h-8.5" 
               alt="Herbora" 
-              className="w-8 h-8 sm:w-8.5 sm:h-8.5 object-contain rounded-full border border-[#DDD6C3] bg-white/80 p-0.5 shadow-2xs group-hover:scale-105 transition-transform"
+              priority={true}
             />
           </button>
         </div>

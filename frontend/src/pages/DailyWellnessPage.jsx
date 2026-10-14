@@ -60,6 +60,10 @@ export default function DailyWellnessPage() {
               src="/assets/card2_perfect.png" 
               alt="Herbal tea infusion on wooden saucer" 
               className="w-full h-full object-contain"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = '/assets/daily-wellness.jpg';
+              }}
             />
           </div>
         </div>

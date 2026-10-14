@@ -82,6 +82,10 @@ export default function ChatAssistant({ onExplorePlants }) {
           src="/assets/herbora_bot_trans.png" 
           alt="Herbora Assistant Icon" 
           className="w-full h-full object-contain drop-shadow-2xs"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = '/assets/herbora-bot.png';
+          }}
         />
       </button>
 
@@ -95,6 +99,10 @@ export default function ChatAssistant({ onExplorePlants }) {
                 src="/assets/herbora-bot.png" 
                 alt="Bot Avatar" 
                 className="w-8 h-8 rounded-full border border-[#8DA56B]/60 bg-white" 
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/assets/herbora-emblem.png';
+                }}
               />
               <div>
                 <h3 className="font-serif text-lg font-bold leading-tight">

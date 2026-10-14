@@ -28,33 +28,72 @@ export default function PlantopediaPage({
   ];
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        const data = await fetchPlants(category, search);
-        setPlants(data);
-      } catch (err) {
-        setError(isHindi ? 'पादप डेटाबेस लोड नहीं हो सका।' : 'Could not load plant library. Please verify backend service.');
-      } finally {
-        setLoading(false);
-      }
+    if (initialSearch !== undefined) {
+      setSearch(initialSearch);
     }
+  }, [initialSearch]);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await fetchPlants(category, '');
+      if (Array.isArray(data) && data.length > 0) {
+        setPlants(data);
+      } else {
+        // Fallback retry with All
+        const fallback = await fetchPlants('All', '');
+        setPlants(fallback || []);
+      }
+    } catch (err) {
+      setError(isHindi ? 'पादप डेटाबेस लोड नहीं हो सका।' : 'Could not load plant library. Please verify backend service.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadData();
   }, [category, isHindi]);
 
   const filteredPlants = useMemo(() => {
+    if (!Array.isArray(plants)) return [];
+    const q = (search || '').trim().toLowerCase();
+
     return plants.map((p) => localizePlant(p)).filter((p) => {
-      const matchCat = category === 'All' || p.category === category || p.category === localizeCategory(category);
-      const q = search.toLowerCase();
-      const matchSearch = 
-        !q ||
-        p.common_name.toLowerCase().includes(q) ||
-        p.scientific_name.toLowerCase().includes(q) ||
-        (p.ayurvedic_name && p.ayurvedic_name.toLowerCase().includes(q)) ||
-        (p.regional_names && p.regional_names.some((rn) => rn.toLowerCase().includes(q)));
-      return matchCat && matchSearch;
+      if (!p) return false;
+      const matchCat = 
+        category === 'All' || 
+        p.category === category || 
+        p.category === localizeCategory(category);
+
+      if (!matchCat) return false;
+      if (!q) return true;
+
+      const commonName = (p.common_name || '').toLowerCase();
+      const sciName = (p.scientific_name || '').toLowerCase();
+      const ayurName = (p.ayurvedic_name || '').toLowerCase();
+      const slug = (p.slug || '').toLowerCase();
+      const cat = (p.category || '').toLowerCase();
+      const desc = (p.description || '').toLowerCase();
+      const uses = (p.traditional_uses || '').toLowerCase();
+
+      const regionalMatch = Array.isArray(p.regional_names)
+        ? p.regional_names.some((rn) => typeof rn === 'string' && rn.toLowerCase().includes(q))
+        : false;
+
+      return (
+        commonName.includes(q) ||
+        sciName.includes(q) ||
+        ayurName.includes(q) ||
+        slug.includes(q) ||
+        cat.includes(q) ||
+        desc.includes(q) ||
+        uses.includes(q) ||
+        regionalMatch
+      );
     });
-  }, [plants, category, search, isHindi]);
+  }, [plants, category, search, isHindi, localizePlant, localizeCategory]);
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
@@ -142,12 +181,21 @@ export default function PlantopediaPage({
           <p className="text-sm text-[#43634E] mt-1 max-w-sm mx-auto">
             {isHindi ? 'कृपया खोज शब्द बदलें या श्रेणी फ़िल्टर को रीसेट करें।' : 'Try adjusting your search keywords or switching category filters.'}
           </p>
-          <button
-            onClick={() => { setSearch(''); setCategory('All'); }}
-            className="mt-4 px-5 py-2 rounded-full bg-[#113E21] text-[#FAF6EE] text-xs font-semibold hover:bg-[#1C542E] transition-all shadow-xs cursor-pointer"
-          >
-            {t('plantopedia.clearSearch')}
-          </button>
+          {plants.length === 0 ? (
+            <button
+              onClick={loadData}
+              className="mt-4 px-5 py-2 rounded-full bg-[#113E21] text-[#FAF6EE] text-xs font-semibold hover:bg-[#1C542E] transition-all shadow-xs cursor-pointer"
+            >
+              <span>{isHindi ? 'डेटाबेस पुनः लोड करें' : 'Reload Botanical Database'}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => { setSearch(''); setCategory('All'); }}
+              className="mt-4 px-5 py-2 rounded-full bg-[#113E21] text-[#FAF6EE] text-xs font-semibold hover:bg-[#1C542E] transition-all shadow-xs cursor-pointer"
+            >
+              {t('plantopedia.clearSearch')}
+            </button>
+          )}
         </div>
       )}
 
@@ -181,12 +229,20 @@ export default function PlantopediaPage({
                   </div>
 
                   {/* Plant Image */}
-                  <div className="w-full h-44 rounded-xl overflow-hidden mb-4 border border-[#DDD6C3] bg-white">
+                  <div className="w-full h-44 rounded-xl overflow-hidden mb-4 border border-[#DDD6C3] bg-[#F7F4EA] relative">
                     <img 
-                      src={plant.image_url || '/assets/herbal-wellness.jpg'} 
+                      src={plant.image_url || `/assets/${plant.slug}.jpg`} 
                       alt={plant.common_name} 
                       className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        if (!e.currentTarget.src.includes(`${plant.slug}.jpg`)) {
+                          e.currentTarget.src = `/assets/${plant.slug}.jpg`;
+                        } else {
+                          e.currentTarget.src = '/assets/herbal-wellness.jpg';
+                        }
+                      }}
                     />
                   </div>
 

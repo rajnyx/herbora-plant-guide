@@ -61,6 +61,10 @@ export default function WellnessTipsPage() {
               src="/assets/card3_perfect.png" 
               alt="Herbal elixir bottle with fresh medicinal herbs" 
               className="w-full h-full object-contain"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = '/assets/herbal-tips.jpg';
+              }}
             />
           </div>
         </div>

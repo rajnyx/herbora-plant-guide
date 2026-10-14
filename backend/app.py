@@ -16,10 +16,9 @@ from routes import api_bp
 def create_app():
     app = Flask(__name__)
     
-    # Configure CORS for frontend access
     CORS(app, resources={
         r"/api/*": {
-            "origins": ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"],
+            "origins": "*",
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization", "X-User-Id"]
         }
@@ -195,22 +194,121 @@ def seed_initial_data():
                     "source_references": [
                         {"title": "Ayurvedic Pharmacopoeia of India — Guduchi", "url": "https://ayush.gov.in"}
                     ]
+                },
+                {
+                    "slug": "amla",
+                    "common_name": "Indian Gooseberry",
+                    "scientific_name": "Phyllanthus emblica",
+                    "ayurvedic_name": "Amalaki",
+                    "regional_names": ["Amla", "Dhatri", "Emblic Myrobalan", "Nellikai"],
+                    "category": "Immunity",
+                    "description": "Celebrated in classical Charaka Samhita as the premier Rasayana for longevity, Amalaki is one of nature's richest natural sources of heat-stable Vitamin C and rejuvenating polyphenols.",
+                    "traditional_uses": "Cornerstone ingredient of Chyawanprash; tonifies digestion, purifies blood, strengthens eyesight, and enhances cellular immunity.",
+                    "plant_parts_used": "Fresh and dried fruits (pericarp), seeds",
+                    "habitat": "Tropical and subtropical deciduous forests across India and Southeast Asia.",
+                    "cultivation_information": "Thrives in deep loamy soil and full sun; highly drought and frost resistant once established.",
+                    "safety_information": "High doses may loosen bowels due to natural vitamin C and tannin content. Safe for daily long-term use.",
+                    "image_url": "/assets/amla.jpg",
+                    "source_references": [
+                        {"title": "Charaka Samhita — Rasayana Adhyaya", "url": "https://vedabase.io"},
+                        {"title": "NCCIH — Indian Gooseberry Overview", "url": "https://www.nccih.nih.gov"}
+                    ]
+                },
+                {
+                    "slug": "fenugreek",
+                    "common_name": "Fenugreek",
+                    "scientific_name": "Trigonella foenum-graecum",
+                    "ayurvedic_name": "Methika",
+                    "regional_names": ["Methi", "Greek Hay", "Vendhayam"],
+                    "category": "Diabetes",
+                    "description": "An aromatic leguminous annual herb prized in Ayurvedic dietary therapy (Ahara) for regulating blood glucose metabolism, improving insulin sensitivity, and easing digestive sluggishness.",
+                    "traditional_uses": "Seeds soaked overnight in water and consumed in the morning for metabolic glucose control and soothing digestive fire (Agni).",
+                    "plant_parts_used": "Seeds and fresh tender leaves",
+                    "habitat": "Cultivated widely across western India, Mediterranean, and North Africa.",
+                    "cultivation_information": "Easily grown in containers or vegetable gardens; prefers loose, well-draining soil and moderate watering.",
+                    "safety_information": "May lower blood glucose levels; diabetic patients taking hypoglycemic medication should monitor blood sugar. Avoid large therapeutic doses during pregnancy.",
+                    "image_url": "/assets/fenugreek.jpg",
+                    "source_references": [
+                        {"title": "Bhavaprakasha Nighantu — Haritakyadi Varga", "url": "https://ayush.gov.in"},
+                        {"title": "PubMed — Trigonella foenum-graecum Glycemic Trials", "url": "https://pubmed.ncbi.nlm.nih.gov"}
+                    ]
+                },
+                {
+                    "slug": "shatavari",
+                    "common_name": "Wild Asparagus",
+                    "scientific_name": "Asparagus racemosus",
+                    "ayurvedic_name": "Shatavari",
+                    "regional_names": ["Satavar", "Shatawari", "Hundred Roots"],
+                    "category": "Adaptogens",
+                    "description": "Known as “she who possesses a hundred husbands”, Shatavari is the foremost Ayurvedic Rasayana for hormonal balance, reproductive vitality, and cooling Pitta inflammation.",
+                    "traditional_uses": "Tuberous roots decocted in warm milk with ghee or raw honey to nourish Shukra and Artava dhatus (reproductive tissues) and calm nervous exhaustion.",
+                    "plant_parts_used": "Tuberous roots",
+                    "habitat": "Rocky, gravelly soils and low jungle hills throughout tropical India and the Himalayas.",
+                    "cultivation_information": "Climbing woody shrub requiring trellis support, well-drained sandy loam, and partial shade.",
+                    "safety_information": "Caution for individuals with severe asparagus allergies or estrogen-sensitive conditions. Generally gentle and nourishing.",
+                    "image_url": "/assets/shatavari.jpg",
+                    "source_references": [
+                        {"title": "Sushruta Samhita — Sutrasthana", "url": "https://vedabase.io"},
+                        {"title": "Kew Plants of the World Online — Asparagus racemosus", "url": "https://powo.science.kew.org"}
+                    ]
+                },
+                {
+                    "slug": "karela",
+                    "common_name": "Bitter Melon",
+                    "scientific_name": "Momordica charantia",
+                    "ayurvedic_name": "Karavellaka",
+                    "regional_names": ["Karela", "Bitter Gourd", "Pavakkai"],
+                    "category": "Diabetes",
+                    "description": "A celebrated bitter tonic and vegetable vine renowned in classical texts for reducing Medas (fat tissue), cleansing Pitta-Kapha impurities, and balancing insulin receptor function.",
+                    "traditional_uses": "Fresh morning juice or steamed preparation to support pancreatic health, cleanse the liver, and maintain balanced blood sugar.",
+                    "plant_parts_used": "Fruits, seeds, and tender leaves",
+                    "habitat": "Tropical and subtropical regions; grown widely in home gardens and farmland.",
+                    "cultivation_information": "Fast-growing annual climbing vine requiring sturdy trellis, warm weather, and regular watering.",
+                    "safety_information": "Excessive intake of seeds may cause gastrointestinal discomfort. Monitor blood glucose closely when combined with antidiabetic prescription drugs.",
+                    "image_url": "/assets/karela.jpg",
+                    "source_references": [
+                        {"title": "Charaka Samhita — Shakavarga", "url": "https://vedabase.io"},
+                        {"title": "WHO Monographs on Selected Medicinal Plants", "url": "https://who.int"}
+                    ]
                 }
             ]
 
+            seeded_count = 0
             for p_dict in plants_data:
-                plant = Plant(**p_dict)
-                db.add(plant)
+                existing = db.query(Plant).filter(Plant.slug == p_dict['slug']).first()
+                if not existing:
+                    plant = Plant(**p_dict)
+                    db.add(plant)
+                    seeded_count += 1
 
-            # Seed sample community post
-            sample_post = CommunityPost(
-                author_name="Ananya Sharma",
-                plant_name="Tulsi (Holy Basil)",
-                note="Three months growing happily on my sunny balcony! Plucking fresh leaves for morning tea brings such peace."
-            )
-            db.add(sample_post)
+            # Seed community posts for Raj, Yasha, Tejasvi if missing
+            featured_authors = [
+                {
+                    "author_name": "Raj",
+                    "plant_name": "Tulsi (Holy Basil)",
+                    "note": "According to sacred tradition, the devoted Vrinda transformed into the holy Tulsi plant after her earthly life ended. Lord Vishnu blessed her with eternal reverence, promising she would always remain dear to him as the purest symbol of spiritual and bodily harmony. Plucking fresh leaves on my balcony brings such sacred tranquility and respiratory clarity each dawn.",
+                    "likes_count": 18
+                },
+                {
+                    "author_name": "Yasha",
+                    "plant_name": "Ashwagandha (Withania somnifera)",
+                    "note": "I have been preparing classical Ashwagandha root decoction with warm A2 cow milk, a small spoonful of pure cow ghee, and a dash of nutmeg before sleep for the past two months. My sleep quality and morning energy have improved drastically! Vata grounding is so profound when paired with warm milk (Anupana). Highly recommend to anyone experiencing modern screen fatigue.",
+                    "likes_count": 14
+                },
+                {
+                    "author_name": "Tejasvi",
+                    "plant_name": "Neem & Turmeric (Nimba & Haridra)",
+                    "note": "Our family tradition has always been a gentle morning paste of fresh ground Neem leaves and organic raw Turmeric with lukewarm water. For skin radiance, liver support, and natural blood purification (Raktashodhaka), there is simply no modern equivalent. During seasonal shifts (Ritu Sandhi), it keeps low fevers and breakouts completely at bay.",
+                    "likes_count": 21
+                }
+            ]
+            for post_item in featured_authors:
+                if not db.query(CommunityPost).filter(CommunityPost.author_name == post_item["author_name"]).first():
+                    db.add(CommunityPost(**post_item))
+
             db.commit()
-            print("Successfully seeded initial Herbora Ayurvedic plants!")
+            if seeded_count > 0:
+                print(f"Successfully seeded {seeded_count} Ayurvedic plants into Herbora database!")
     except Exception as e:
         print(f"Notice during seeding: {e}")
         db.rollback()

@@ -35,6 +35,10 @@ export default function AboutPage() {
             src="/assets/herbora-logo.png" 
             alt="Official Herbora Logo" 
             className="w-full h-full object-contain"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = '/assets/herbora-emblem.png';
+            }}
           />
         </div>
         <h1 className="font-serif text-4xl sm:text-5xl font-bold text-[#113E21]">

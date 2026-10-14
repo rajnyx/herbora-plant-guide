@@ -117,11 +117,19 @@ export default function MyPlantDBPage({
                   </div>
 
                   {/* Thumbnail Image */}
-                  <div className="w-full h-44 rounded-xl overflow-hidden mb-4 border border-[#E2DDD0] bg-white">
+                  <div className="w-full h-44 rounded-xl overflow-hidden mb-4 border border-[#E2DDD0] bg-[#F7F4EA] relative">
                     <img 
-                      src={plant.image_url || '/assets/herbal-wellness.jpg'} 
+                      src={plant.image_url || `/assets/${plant.slug}.jpg`} 
                       alt={plant.common_name} 
                       className="w-full h-full object-cover object-center"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        if (!e.currentTarget.src.includes(`${plant.slug}.jpg`)) {
+                          e.currentTarget.src = `/assets/${plant.slug}.jpg`;
+                        } else {
+                          e.currentTarget.src = '/assets/herbal-wellness.jpg';
+                        }
+                      }}
                     />
                   </div>
 

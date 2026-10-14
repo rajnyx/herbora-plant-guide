@@ -11,6 +11,7 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
   const { t, localizePlant, isHindi } = useLanguage();
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [activeHint, setActiveHint] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -39,6 +40,7 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
     setErrorMsg('');
     setResult(null);
     setSelectedFile(file);
+    setActiveHint('');
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
   };
@@ -55,6 +57,7 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
     setErrorMsg('');
     setResult(null);
     setPreviewUrl(sample.img);
+    setActiveHint(sample.hint || '');
     // Fetch blob for sample
     try {
       const resp = await fetch(sample.img);
@@ -76,10 +79,10 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
     setErrorMsg('');
 
     try {
-      const data = await identifyPlantImage(selectedFile, '', currentUser?.id);
+      const data = await identifyPlantImage(selectedFile, activeHint, currentUser?.id);
       setResult(data);
     } catch (err) {
-      setErrorMsg('Plant identification service encountered an error. Please try again.');
+      setErrorMsg(err.message || 'Plant identification service encountered an error. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -89,6 +92,7 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
     setSelectedFile(null);
     setPreviewUrl(null);
     setResult(null);
+    setActiveHint('');
     setErrorMsg('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -158,6 +162,14 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
                   src={previewUrl} 
                   alt="Plant preview" 
                   className="w-full h-full object-cover object-center"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    if (activeHint) {
+                      e.target.src = `/assets/${activeHint}.jpg`;
+                    } else {
+                      e.target.src = '/assets/tulsi.jpg';
+                    }
+                  }}
                 />
                 {isProcessing && (
                   <div className="absolute inset-0 bg-[#174B2B]/60 backdrop-blur-xs flex flex-col items-center justify-center text-white gap-3">

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { X, Home, BookOpen, Bookmark, Camera, Clock, Sparkles, Sprout, HelpCircle, MessageSquare, Info, LogIn } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSelector from './LanguageSelector';
-import herboraEmblem from '../assets/herbora-emblem.png';
+import HerboraEmblem from './HerboraEmblem';
 
 export default function NavigationDrawer({
   isOpen,
@@ -68,10 +68,10 @@ export default function NavigationDrawer({
         {/* Drawer Header */}
         <div className="p-5 border-b border-[#DDD6C3] flex items-center justify-between select-none">
           <div className="flex items-center gap-3">
-            <img 
-              src={herboraEmblem} 
+            <HerboraEmblem 
+              className="w-10 h-10" 
               alt="Herbora Official Logo" 
-              className="w-10 h-10 object-contain rounded-full border border-[#DDD6C3] bg-white/90 p-0.5 shadow-xs"
+              priority={true}
             />
             <div>
               <h2 className="font-serif text-2xl font-bold text-[#113E21] leading-tight">{t('brand.name')}</h2>

@@ -107,6 +107,12 @@ export default function FeatureCards({ onNavigate }) {
               alt={card.alt}
               className="absolute right-0 bottom-0 w-36 sm:w-44 h-32 sm:h-38 object-contain pointer-events-none select-none z-0"
               loading="lazy"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                if (card.id === 'herbal-wellness') e.currentTarget.src = '/assets/herbal-wellness.jpg';
+                else if (card.id === 'daily-wellness') e.currentTarget.src = '/assets/daily-wellness.jpg';
+                else e.currentTarget.src = '/assets/herbal-tips.jpg';
+              }}
             />
           </div>
         ))}

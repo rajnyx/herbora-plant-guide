@@ -218,9 +218,16 @@ class Feedback(Base):
 
 
 # Database Connection Setup
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///herbora.db')
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CANONICAL_SQLITE_PATH = os.path.join(BASE_DIR, 'herbora.db').replace('\\', '/')
+
+raw_db_url = os.getenv('DATABASE_URL', '').strip()
+if not raw_db_url or raw_db_url in ('sqlite:///herbora.db', 'sqlite:///./herbora.db'):
+    DATABASE_URL = f"sqlite:///{CANONICAL_SQLITE_PATH}"
+elif raw_db_url.startswith("postgres://"):
+    DATABASE_URL = raw_db_url.replace("postgres://", "postgresql://", 1)
+else:
+    DATABASE_URL = raw_db_url
 
 engine = create_engine(DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

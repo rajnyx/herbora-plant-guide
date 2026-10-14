@@ -12,6 +12,10 @@ export default function HeroSection() {
           src="/assets/hero_left_seamless.png" 
           alt="" 
           className="h-full w-auto object-contain object-left" 
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = '/assets/left_botanical_branch.png';
+          }}
         />
       </div>
 
@@ -64,6 +68,10 @@ export default function HeroSection() {
               alt="Ayurvedic herbs with stone mortar and pestle, wooden bowl of dried herbs and fresh leaves on warm studio surface" 
               className="w-full h-auto object-contain select-none pointer-events-none"
               loading="eager"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = '/assets/herbora-hero.jpg';
+              }}
             />
           </div>
         </div>
