@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { HelpCircle, CheckCircle2, XCircle, RotateCcw, Award, ArrowRight, Sparkles } from 'lucide-react';
-import { fetchQuiz } from '../services/api';
+import { fetchQuiz, FALLBACK_QUIZ } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function QuizPage() {
   const { t, localizeQuiz, isHindi } = useLanguage();
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState(FALLBACK_QUIZ);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [score, setScore] = useState(0);
@@ -13,7 +13,9 @@ export default function QuizPage() {
   const [quizFinished, setQuizFinished] = useState(false);
 
   useEffect(() => {
-    fetchQuiz().then(setQuestions).catch(() => {});
+    fetchQuiz().then((data) => {
+      if (Array.isArray(data) && data.length > 0) setQuestions(data);
+    }).catch(() => {});
   }, []);
 
   const rawQ = questions[currentIndex];

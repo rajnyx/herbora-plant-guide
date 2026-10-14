@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Sprout, Sun, Droplets, CheckCircle2, Plus, Trash2, Calendar } from 'lucide-react';
-import { fetchGardenPlants } from '../services/api';
+import { fetchGardenPlants, FALLBACK_GARDEN_PLANTS } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function GardenPlannerPage() {
   const { t, localizeGardenPlant, isHindi } = useLanguage();
-  const [gardenPlants, setGardenPlants] = useState([]);
+  const [gardenPlants, setGardenPlants] = useState(FALLBACK_GARDEN_PLANTS);
   const [reminders, setReminders] = useState(() => {
     const saved = localStorage.getItem('herbora_reminders');
     return saved ? JSON.parse(saved) : [
@@ -18,7 +18,9 @@ export default function GardenPlannerPage() {
   const [newPlantTime, setNewPlantTime] = useState('');
 
   useEffect(() => {
-    fetchGardenPlants().then(setGardenPlants).catch(() => {});
+    fetchGardenPlants().then((data) => {
+      if (Array.isArray(data) && data.length > 0) setGardenPlants(data);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {

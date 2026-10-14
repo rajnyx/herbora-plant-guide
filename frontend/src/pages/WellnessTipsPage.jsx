@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Lightbulb, RotateCcw, ShieldCheck, Heart, Sparkles, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
-import { fetchRemedies, fetchMyths } from '../services/api';
+import { fetchRemedies, fetchMyths, FALLBACK_REMEDIES, FALLBACK_MYTHS } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function WellnessTipsPage() {
   const { t, localizeRemedy, localizeMyth, isHindi } = useLanguage();
-  const [remedies, setRemedies] = useState([]);
-  const [myths, setMyths] = useState([]);
+  const [remedies, setRemedies] = useState(FALLBACK_REMEDIES);
+  const [myths, setMyths] = useState(FALLBACK_MYTHS);
   const [flippedCards, setFlippedCards] = useState({});
 
   useEffect(() => {
-    fetchRemedies().then(setRemedies).catch(() => {});
-    fetchMyths().then(setMyths).catch(() => {});
+    fetchRemedies().then((data) => {
+      if (Array.isArray(data) && data.length > 0) setRemedies(data);
+    }).catch(() => {});
+    fetchMyths().then((data) => {
+      if (Array.isArray(data) && data.length > 0) setMyths(data);
+    }).catch(() => {});
   }, []);
 
   const toggleFlip = (id) => {

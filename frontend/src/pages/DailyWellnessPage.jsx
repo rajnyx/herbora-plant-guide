@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Sun, Moon, Utensils, Heart, ShieldAlert, Sparkles } from 'lucide-react';
-import { fetchDincharya } from '../services/api';
+import { fetchDincharya, FALLBACK_DINCHARYA } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function DailyWellnessPage() {
   const { t, localizeDincharya, isHindi } = useLanguage();
-  const [timeline, setTimeline] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [timeline, setTimeline] = useState(FALLBACK_DINCHARYA);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchDincharya()
-      .then(setTimeline)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) setTimeline(data);
+      })
+      .catch(() => {});
   }, []);
 
   return (

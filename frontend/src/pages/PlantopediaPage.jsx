@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Filter, Bookmark, BookmarkCheck, ArrowRight, Sprout, AlertCircle } from 'lucide-react';
-import { fetchPlants } from '../services/api';
+import { fetchPlants, FALLBACK_PLANTS } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function PlantopediaPage({ 
@@ -10,10 +10,10 @@ export default function PlantopediaPage({
   onSavePlant 
 }) {
   const { t, localizePlant, localizeCategory, isHindi } = useLanguage();
-  const [plants, setPlants] = useState([]);
+  const [plants, setPlants] = useState(FALLBACK_PLANTS);
   const [search, setSearch] = useState(initialSearch);
   const [category, setCategory] = useState('All');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const categories = [
@@ -34,27 +34,19 @@ export default function PlantopediaPage({
   }, [initialSearch]);
 
   const loadData = async () => {
-    setLoading(true);
-    setError('');
     try {
-      const data = await fetchPlants(category, '');
+      const data = await fetchPlants('All', '');
       if (Array.isArray(data) && data.length > 0) {
         setPlants(data);
-      } else {
-        // Fallback retry with All
-        const fallback = await fetchPlants('All', '');
-        setPlants(fallback || []);
       }
-    } catch (err) {
-      setError(isHindi ? 'पादप डेटाबेस लोड नहीं हो सका।' : 'Could not load plant library. Please verify backend service.');
-    } finally {
-      setLoading(false);
+    } catch {
+      // Keep canonical FALLBACK_PLANTS
     }
   };
 
   useEffect(() => {
     loadData();
-  }, [category, isHindi]);
+  }, [isHindi]);
 
   const filteredPlants = useMemo(() => {
     if (!Array.isArray(plants)) return [];

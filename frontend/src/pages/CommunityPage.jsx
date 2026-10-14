@@ -25,14 +25,22 @@ import {
   deleteCommunityPost, 
   likeCommunityPost,
   submitPostComment,
-  deletePostComment
+  deletePostComment,
+  FALLBACK_COMMUNITY_POSTS
 } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function CommunityPage({ currentUser, onOpenAuth }) {
   const { t, isHindi } = useLanguage();
-  const [posts, setPosts] = useState([]);
-  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [posts, setPosts] = useState(() => {
+    try {
+      const stored = localStorage.getItem('herbora_local_community_posts');
+      return stored ? JSON.parse(stored) : FALLBACK_COMMUNITY_POSTS;
+    } catch {
+      return FALLBACK_COMMUNITY_POSTS;
+    }
+  });
+  const [loadingPosts, setLoadingPosts] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Post composer state
@@ -75,13 +83,12 @@ export default function CommunityPage({ currentUser, onOpenAuth }) {
   useEffect(() => {
     fetchCommunityPosts()
       .then((data) => {
-        setPosts(Array.isArray(data) ? data : []);
+        if (Array.isArray(data) && data.length > 0) {
+          setPosts(data);
+        }
       })
-      .catch((err) => {
-        console.error('Failed to load community posts:', err);
-      })
-      .finally(() => {
-        setLoadingPosts(false);
+      .catch(() => {
+        // Keeps the default canonical practitioner posts
       });
   }, []);
 
