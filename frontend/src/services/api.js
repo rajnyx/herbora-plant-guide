@@ -761,28 +761,14 @@ export function fallbackIdentifyPlant(imageFile, hint = '') {
   }
 
   if (!candidate) {
-    // Default smart selection: Tulsi or random signature
-    candidate = AYURVEDIC_BOTANICAL_SIGNATURES[0];
+    return null;
   }
 
-  const matched = FALLBACK_PLANTS.find(p => p.slug === candidate.slug) || {
-    id: `plant-${candidate.slug}`,
-    slug: candidate.slug,
-    common_name: candidate.common_name,
-    scientific_name: candidate.scientific_name,
-    ayurvedic_name: candidate.ayurvedic_name,
-    category: candidate.category,
-    image_url: `/assets/${candidate.slug}.jpg`,
-    description: `Authentic Ayurvedic botanical profile for ${candidate.common_name}.`,
-    traditional_uses: "Classical preparation and traditional formulations documented in Charaka and Sushruta Samhitas.",
-    is_published: true
-  };
-
-  const alternatives = AYURVEDIC_BOTANICAL_SIGNATURES.filter(p => p.slug !== candidate.slug);
-  const alt = alternatives[Math.floor(Math.random() * alternatives.length)];
+  const matched = FALLBACK_PLANTS.find(p => p.slug === candidate.slug) || null;
 
   return {
     status: "success",
+    source: "sample_preset",
     predicted_name: candidate.common_name,
     scientific_name: candidate.scientific_name,
     ayurvedic_name: candidate.ayurvedic_name,
@@ -794,14 +780,9 @@ export function fallbackIdentifyPlant(imageFile, hint = '') {
       green_density: "76%",
       dimensions: "High Resolution"
     },
-    secondary_prediction: {
-      common_name: alt.common_name,
-      scientific_name: alt.scientific_name,
-      confidence_score: 4.8
-    },
     matched_plant: matched,
     matched_plant_slug: candidate.slug,
-    disclaimer: "AI identification is educational assistance only. Always verify botanical identity before culinary or medicinal use."
+    disclaimer: "Botanical sample preset match. Verify botanical identity before medicinal or therapeutic preparation."
   };
 }
 
@@ -1005,6 +986,70 @@ const CLIENT_BOTANICAL_SYNONYMS = {
   "momordica charantia": "karela"
 };
 
+// --- Client-side Image Optimization for Fast & Reliable Botanical Vision ---
+export async function compressImageForAi(file) {
+  if (!file) return file;
+  if (typeof window === 'undefined' || typeof document === 'undefined') return file;
+
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const maxDim = 1200;
+        let { width, height } = img;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name || 'botanical_sample.jpg', {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(file);
+            }
+          },
+          'image/jpeg',
+          0.85
+        );
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(file);
+      };
+
+      img.src = objectUrl;
+    } catch {
+      resolve(file);
+    }
+  });
+}
+
 export async function identifyViaPlantNetDirect(imageFile) {
   if (!imageFile) return null;
   const apiKey = PLANTNET_API_KEY;
@@ -1012,7 +1057,7 @@ export async function identifyViaPlantNetDirect(imageFile) {
 
   try {
     const formData = new FormData();
-    formData.append('images', imageFile);
+    formData.append('images', imageFile, 'plant.jpg');
     formData.append('organs', 'auto');
 
     const res = await fetch(`https://my-api.plantnet.org/v2/identify/all?api-key=${apiKey}`, {
@@ -1021,7 +1066,8 @@ export async function identifyViaPlantNetDirect(imageFile) {
     });
 
     if (!res.ok) {
-      console.warn("Pl@ntNet API returned status:", res.status);
+      const errText = await res.text().catch(() => '');
+      console.warn("Pl@ntNet API returned status:", res.status, errText);
       return null;
     }
 
@@ -1128,43 +1174,85 @@ export async function identifyViaPlantNetDirect(imageFile) {
 }
 
 export async function identifyPlantImage(imageFile, hint = '', userId = null) {
-  // 1. Try /api/identify (Works on Vercel Edge Function as well as local Python Flask!)
+  if (!imageFile && !hint) {
+    throw new Error('Please select or upload a plant photo first.');
+  }
+
+  // 1. If user clicked a preset sample herb button (e.g. Tulsi, Neem, Turmeric, Ashwagandha)
+  if (hint && (!imageFile || imageFile.size < 500)) {
+    const sampleMatch = fallbackIdentifyPlant(imageFile, hint);
+    if (sampleMatch) return sampleMatch;
+  }
+
+  // 2. Pre-compress image in browser for fast upload & to prevent hitting payload/timeout limits
+  let processedFile = imageFile;
   if (imageFile) {
     try {
+      processedFile = await compressImageForAi(imageFile);
+    } catch (err) {
+      console.warn("Image pre-compression bypassed:", err);
+      processedFile = imageFile;
+    }
+  }
+
+  let errorDetails = null;
+
+  // 3. Primary: /api/identify (Works on Vercel Edge/Serverless proxy and local Flask)
+  if (processedFile) {
+    try {
       const formData = new FormData();
-      formData.append('image', imageFile);
+      formData.append('image', processedFile, 'botanical_sample.jpg');
       if (hint) formData.append('hint', hint);
       if (userId) formData.append('user_id', userId);
 
-      const res = await fetch(`${API_BASE}/identify`, {
+      const res = await fetch('/api/identify', {
         method: 'POST',
         body: formData
       });
+
       if (res.ok) {
         const data = await res.json();
         if (data && (data.status === 'success' || data.predicted_name)) {
-          // If matched_plant is not already attached (e.g. from Edge function), attach from local fallback database
           if (!data.matched_plant && data.slug) {
             data.matched_plant = FALLBACK_PLANTS.find(p => p.slug === data.slug) || null;
           }
           return data;
         }
+      } else {
+        const errJson = await res.json().catch(() => null);
+        if (errJson?.error) {
+          errorDetails = errJson.error + (errJson.details ? ` (${errJson.details})` : '');
+        }
       }
     } catch (err) {
-      console.warn("/api/identify request failed, attempting direct botanical fallback:", err);
+      console.warn("/api/identify request failed, attempting direct Pl@ntNet fallback:", err);
+      errorDetails = err.message;
     }
   }
 
-  // 2. Direct browser call to Pl@ntNet API (guarantees real AI identification on localhost even if backend is offline)
-  if (imageFile) {
-    const directResult = await identifyViaPlantNetDirect(imageFile);
-    if (directResult) {
-      return directResult;
+  // 4. Secondary: Direct browser call to Pl@ntNet API (guarantees real AI identification even if serverless proxy fails)
+  if (processedFile) {
+    try {
+      const directResult = await identifyViaPlantNetDirect(processedFile);
+      if (directResult) {
+        return directResult;
+      }
+    } catch (err) {
+      console.warn("Direct Pl@ntNet identification failed:", err);
     }
   }
 
-  // 3. Fallback to client botanical signature heuristic
-  return fallbackIdentifyPlant(imageFile, hint);
+  // 5. If quick-test sample herb, provide accurate sample match
+  if (hint) {
+    const sampleMatch = fallbackIdentifyPlant(processedFile, hint);
+    if (sampleMatch) return sampleMatch;
+  }
+
+  // 6. If an actual photo was uploaded and could not be verified, show real explanation (NEVER fake as Tulsi 95.2%!)
+  throw new Error(
+    errorDetails || 
+    "Pl@ntNet AI could not confidently identify a medicinal plant from this photo. Please upload a clear, focused, well-lit photo of the leaf, flower, or fruit."
+  );
 }
 
 export async function sendBotChat(message) {

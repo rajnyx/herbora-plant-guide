@@ -175,7 +175,7 @@ export default async function handler(req) {
     }
 
     const outForm = new FormData();
-    outForm.append('images', imageFile);
+    outForm.append('images', imageFile, 'plant.jpg');
     outForm.append('organs', 'auto');
 
     const pnetRes = await fetch(
