@@ -29,9 +29,6 @@ let lastCheckTime = 0;
 
 export async function isBackendAvailable() {
   if (typeof window === 'undefined') return false;
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  // If hosted in cloud / static preview (e.g. Lovable, Vercel, Netlify), no local Python server exists
-  if (!isLocal) return false;
 
   const now = Date.now();
   // Cache the check for 10 seconds to avoid excessive network requests
@@ -41,7 +38,7 @@ export async function isBackendAvailable() {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 900);
+    const timeoutId = setTimeout(() => controller.abort(), 1200);
     const res = await fetch(`${API_BASE}/health`, { signal: controller.signal });
     clearTimeout(timeoutId);
     backendAvailable = res.ok;
@@ -1131,12 +1128,11 @@ export async function identifyViaPlantNetDirect(imageFile) {
 }
 
 export async function identifyPlantImage(imageFile, hint = '', userId = null) {
-  // 1. Try Backend if running
-  const available = await isBackendAvailable();
-  if (available) {
+  // 1. Try /api/identify (Works on Vercel Edge Function as well as local Python Flask!)
+  if (imageFile) {
     try {
       const formData = new FormData();
-      if (imageFile) formData.append('image', imageFile);
+      formData.append('image', imageFile);
       if (hint) formData.append('hint', hint);
       if (userId) formData.append('user_id', userId);
 
@@ -1145,14 +1141,21 @@ export async function identifyPlantImage(imageFile, hint = '', userId = null) {
         body: formData
       });
       if (res.ok) {
-        return await res.json();
+        const data = await res.json();
+        if (data && (data.status === 'success' || data.predicted_name)) {
+          // If matched_plant is not already attached (e.g. from Edge function), attach from local fallback database
+          if (!data.matched_plant && data.slug) {
+            data.matched_plant = FALLBACK_PLANTS.find(p => p.slug === data.slug) || null;
+          }
+          return data;
+        }
       }
     } catch (err) {
-      console.warn("Backend /identify unavailable, falling back to direct Pl@ntNet:", err);
+      console.warn("/api/identify request failed, attempting direct botanical fallback:", err);
     }
   }
 
-  // 2. Direct browser call to Pl@ntNet API (guarantees real AI identification even with only `npm run dev`)
+  // 2. Direct browser call to Pl@ntNet API (guarantees real AI identification on localhost even if backend is offline)
   if (imageFile) {
     const directResult = await identifyViaPlantNetDirect(imageFile);
     if (directResult) {
