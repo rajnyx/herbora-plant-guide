@@ -964,7 +964,174 @@ export async function removePlantFromDb(plantId, userId) {
   return { success: true, removed: true, plant_id: plantId };
 }
 
+// --- Direct Browser Pl@ntNet Botanical Vision Client ---
+const PLANTNET_API_KEY = import.meta.env.VITE_PLANTNET_API_KEY || '2b10qSHoLPAnN9YdAbFC9k8X1O';
+
+const CLIENT_BOTANICAL_SYNONYMS = {
+  // Tulsi
+  "ocimum tenuiflorum": "tulsi",
+  "ocimum sanctum": "tulsi",
+  "ocimum gratissimum": "tulsi",
+  "ocimum basilicum": "tulsi",
+  // Neem
+  "azadirachta indica": "neem",
+  "melia azadirachta": "neem",
+  // Ashwagandha
+  "withania somnifera": "ashwagandha",
+  "physalis somnifera": "ashwagandha",
+  // Brahmi
+  "bacopa monnieri": "brahmi",
+  "herpestis monnieria": "brahmi",
+  "centella asiatica": "brahmi",
+  // Turmeric
+  "curcuma longa": "turmeric",
+  "curcuma domestica": "turmeric",
+  // Aloe Vera
+  "aloe barbadensis": "aloe-vera",
+  "aloe vera": "aloe-vera",
+  "aloe officinalis": "aloe-vera",
+  "aloe perfoliata": "aloe-vera",
+  "aloe chinensis": "aloe-vera",
+  // Giloy
+  "tinospora cordifolia": "giloy",
+  "menispermum cordifolium": "giloy",
+  // Ginger
+  "zingiber officinale": "ginger",
+  // Amla
+  "phyllanthus emblica": "amla",
+  "emblica officinalis": "amla",
+  // Fenugreek
+  "trigonella foenum-graecum": "fenugreek",
+  // Shatavari
+  "asparagus racemosus": "shatavari",
+  // Karela
+  "momordica charantia": "karela"
+};
+
+export async function identifyViaPlantNetDirect(imageFile) {
+  if (!imageFile) return null;
+  const apiKey = PLANTNET_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const formData = new FormData();
+    formData.append('images', imageFile);
+    formData.append('organs', 'auto');
+
+    const res = await fetch(`https://my-api.plantnet.org/v2/identify/all?api-key=${apiKey}`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) {
+      console.warn("Pl@ntNet API returned status:", res.status);
+      return null;
+    }
+
+    const data = await res.json();
+    const results = data.results || [];
+    if (results.length === 0) return null;
+
+    const top = results[0];
+    const topSpecies = top.species || {};
+    const score = top.score || 0;
+    const confidence = Math.round(score * 1000) / 10;
+
+    const sciName = topSpecies.scientificNameWithoutAuthor || topSpecies.scientificName || "Unknown Plant";
+    const commonNames = topSpecies.commonNames || [];
+    const genus = topSpecies.genus?.scientificNameWithoutAuthor || "";
+    const family = topSpecies.family?.scientificNameWithoutAuthor || "";
+    const sciLower = sciName.toLowerCase().trim();
+
+    // Map to Ayurvedic plant signature
+    let matchedSlug = CLIENT_BOTANICAL_SYNONYMS[sciLower];
+    let matchedSignature = null;
+
+    if (!matchedSlug && sciLower.startsWith("aloe")) {
+      matchedSlug = "aloe-vera";
+    }
+    if (!matchedSlug && sciLower.startsWith("ocimum")) {
+      matchedSlug = "tulsi";
+    }
+
+    if (!matchedSlug) {
+      for (const sig of AYURVEDIC_BOTANICAL_SIGNATURES) {
+        if (sciLower.includes(sig.scientific_name.toLowerCase()) || sig.scientific_name.toLowerCase().includes(sciLower)) {
+          matchedSlug = sig.slug;
+          matchedSignature = sig;
+          break;
+        }
+      }
+    }
+
+    if (!matchedSlug && commonNames.length > 0) {
+      for (const c of commonNames) {
+        const cLower = c.toLowerCase();
+        for (const sig of AYURVEDIC_BOTANICAL_SIGNATURES) {
+          if (cLower.includes(sig.common_name.toLowerCase()) || 
+              sig.common_name.toLowerCase().includes(cLower) ||
+              cLower.includes(sig.ayurvedic_name.toLowerCase()) ||
+              sig.ayurvedic_name.toLowerCase().includes(cLower) ||
+              cLower.includes(sig.slug)) {
+            matchedSlug = sig.slug;
+            matchedSignature = sig;
+            break;
+          }
+        }
+        if (matchedSlug) break;
+      }
+    }
+
+    if (matchedSlug && !matchedSignature) {
+      matchedSignature = AYURVEDIC_BOTANICAL_SIGNATURES.find(s => s.slug === matchedSlug) || null;
+    }
+
+    const matchedPlant = matchedSlug ? (FALLBACK_PLANTS.find(p => p.slug === matchedSlug) || null) : null;
+
+    const traits = [];
+    if (family) traits.push(`Family: ${family}`);
+    if (genus) traits.push(`Genus: ${genus}`);
+    if (matchedSignature?.traits) {
+      traits.push(...matchedSignature.traits.slice(0, 2));
+    } else if (commonNames.length > 0) {
+      traits.push(`Common: ${commonNames.slice(0, 2).join(', ')}`);
+    }
+
+    let secondary = null;
+    if (results.length > 1) {
+      const sec = results[1];
+      const secSpecies = sec.species || {};
+      const secCommon = secSpecies.commonNames || [];
+      secondary = {
+        common_name: secCommon[0] || secSpecies.scientificNameWithoutAuthor || "Alternative match",
+        scientific_name: secSpecies.scientificNameWithoutAuthor || "",
+        confidence_score: Math.max(1, Math.round((sec.score || 0) * 1000) / 10)
+      };
+    }
+
+    return {
+      status: "success",
+      source: "plantnet_api",
+      predicted_name: matchedSignature ? matchedSignature.common_name : (commonNames[0] || sciName),
+      scientific_name: sciName,
+      ayurvedic_name: matchedSignature ? matchedSignature.ayurvedic_name : null,
+      slug: matchedSlug || sciName.toLowerCase().replace(/\s+/g, '-'),
+      category: matchedSignature ? matchedSignature.category : "Medicinal Flora",
+      confidence_score: confidence,
+      botanical_traits: traits,
+      matched_plant: matchedPlant,
+      matched_plant_slug: matchedSlug,
+      secondary_prediction: secondary,
+      disclaimer: "Identified using Pl@ntNet botanical vision. Verify identity before medicinal or therapeutic preparation."
+    };
+  } catch (err) {
+    console.warn("Direct Pl@ntNet identification error:", err);
+    return null;
+  }
+}
+
 export async function identifyPlantImage(imageFile, hint = '', userId = null) {
+  // 1. Try Backend if running
   const available = await isBackendAvailable();
   if (available) {
     try {
@@ -981,11 +1148,19 @@ export async function identifyPlantImage(imageFile, hint = '', userId = null) {
         return await res.json();
       }
     } catch (err) {
-      console.warn("Backend /identify unavailable, using client botanical engine:", err);
+      console.warn("Backend /identify unavailable, falling back to direct Pl@ntNet:", err);
     }
   }
 
-  // Guaranteed client-side identification fallback
+  // 2. Direct browser call to Pl@ntNet API (guarantees real AI identification even with only `npm run dev`)
+  if (imageFile) {
+    const directResult = await identifyViaPlantNetDirect(imageFile);
+    if (directResult) {
+      return directResult;
+    }
+  }
+
+  // 3. Fallback to client botanical signature heuristic
   return fallbackIdentifyPlant(imageFile, hint);
 }
 

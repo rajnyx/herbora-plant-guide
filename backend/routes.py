@@ -364,9 +364,19 @@ def identify_plant():
     # Cross-reference with database to return full entry
     db = SessionLocal()
     try:
-        db_plant = db.query(Plant).filter(Plant.slug == result["slug"]).first()
+        db_plant = None
+        if result.get("slug"):
+            db_plant = db.query(Plant).filter(Plant.slug == result["slug"]).first()
+        if not db_plant and result.get("scientific_name"):
+            db_plant = db.query(Plant).filter(Plant.scientific_name.ilike(f"%{result['scientific_name']}%")).first()
+        if not db_plant and result.get("predicted_name"):
+            db_plant = db.query(Plant).filter(Plant.common_name.ilike(f"%{result['predicted_name']}%")).first()
+
         if db_plant:
             result["matched_plant"] = db_plant.to_dict()
+            result["slug"] = db_plant.slug
+            if not result.get("ayurvedic_name"):
+                result["ayurvedic_name"] = db_plant.ayurvedic_name
             matched_id = db_plant.id
         else:
             result["matched_plant"] = None

@@ -274,7 +274,7 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-widest text-[#285D36] flex items-center gap-1.5">
                   <CheckCircle className="w-4 h-4 text-[#8DA56B]" />
-                  Prediction Verified
+                  {result.source === 'plantnet_api' ? 'Pl@ntNet AI Verified' : 'Prediction Verified'}
                 </span>
                 <span className="text-xs px-2.5 py-1 rounded-full bg-[#DDE5C9] text-[#174B2B] font-bold">
                   {result.confidence_score}% Match
