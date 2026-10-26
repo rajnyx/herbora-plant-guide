@@ -83,14 +83,21 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialSignU
     try {
       if (isSignUp) {
         const data = await signUpWithEmail(email, password, fullName);
-        setSuccessMsg('Account created successfully! You are now signed in.');
-        if (data?.user && onAuthSuccess) {
-          onAuthSuccess(data.user);
+        if (data?.needsEmailConfirmation) {
+          setSuccessMsg('Account created! Please check your email inbox to confirm your account before signing in.');
           setTimeout(() => {
-            handleClose();
-          }, 800);
+            switchMode(false);
+          }, 4000);
         } else {
-          switchMode(false);
+          setSuccessMsg('Account created successfully! You are now signed in.');
+          if (data?.user && onAuthSuccess) {
+            onAuthSuccess(data.user);
+            setTimeout(() => {
+              handleClose();
+            }, 1000);
+          } else {
+            switchMode(false);
+          }
         }
       } else {
         const data = await signInWithEmail(email, password);
