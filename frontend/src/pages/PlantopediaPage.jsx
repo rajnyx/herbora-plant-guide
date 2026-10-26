@@ -561,7 +561,7 @@ export default function PlantopediaPage({
                   {/* Plant Image */}
                   <div className="w-full h-44 rounded-xl overflow-hidden mb-4 border border-[#DDD6C3] bg-[#F7F4EA] relative">
                     <img 
-                      src={plant.image_url || getPlantImageUrl(plant)} 
+                      src={getPlantImageUrl(plant)} 
                       alt={plant.common_name} 
                       className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"

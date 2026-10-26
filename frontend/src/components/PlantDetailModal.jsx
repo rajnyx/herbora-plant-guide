@@ -115,7 +115,7 @@ export default function PlantDetailModal({
             <div className="md:col-span-4 flex justify-center">
               <div className="w-40 h-40 rounded-2xl overflow-hidden border border-[#DDD6C3] shadow-inner bg-[#F7F4EA]">
                 <img 
-                  src={plant.image_url || getPlantImageUrl(plant)} 
+                  src={getPlantImageUrl(plant)} 
                   alt={plant.common_name} 
                   className="w-full h-full object-cover object-center"
                   onError={(e) => {

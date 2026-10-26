@@ -15,7 +15,25 @@ export const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY)
     })
   : null;
 
-const API_BASE = '/api';
+// Base API URL Resolution:
+// 1. Checks VITE_API_URL or VITE_BACKEND_URL from environment variables
+// 2. In production builds, defaults to deployed Herbora backend URL
+// 3. In local development, routes to '/api' (proxied by Vite to localhost:5000)
+const DEPLOYED_BACKEND_URL = 'https://herbora-plant-guide-3u26-ajy0gy6j9-raj-c54f.vercel.app';
+
+function resolveApiBase() {
+  const envUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '').trim();
+  if (envUrl) {
+    const clean = envUrl.replace(/\/+$/, '');
+    return clean.endsWith('/api') ? clean : `${clean}/api`;
+  }
+  if (import.meta.env.PROD) {
+    return `${DEPLOYED_BACKEND_URL}/api`;
+  }
+  return '/api';
+}
+
+export const API_BASE = resolveApiBase();
 
 // --- User Normalization Helper ---
 export function formatUser(user) {
@@ -1416,13 +1434,25 @@ export function fallbackIdentifyPlant(imageFile, hint = '') {
 
 export function getPlantImageUrl(plant) {
   if (!plant) return '/assets/botanical_canvas.jpg';
-  if (plant.image_url && !plant.image_url.includes('herbal-wellness.jpg') && !plant.image_url.includes('logo')) {
-    return plant.image_url;
+  
+  let img = plant.image_url;
+  const slug = (plant.slug || '').toLowerCase();
+  const cleanSlug = slug.replace(/[\s_\-]+/g, '-');
+  const noDash = slug.replace(/[\s_\-]+/g, '');
+
+  if (!img || img.includes('herbal-wellness.jpg') || img.includes('logo') || img.includes('botanical_canvas.jpg')) {
+    img = plantImages[slug] || plantImages[cleanSlug] || plantImages[noDash] || `/assets/${cleanSlug}.jpg`;
   }
-  const slug = plant.slug || '';
-  const cleanSlug = slug.toLowerCase().replace(/[\s_\-]+/g, '-');
-  const noDash = slug.toLowerCase().replace(/[\s_\-]+/g, '');
-  return plantImages[slug] || plantImages[cleanSlug] || plantImages[noDash] || `/assets/${cleanSlug}.jpg`;
+
+  // Normalize Wikimedia URLs (convert broken thumb.wikimedia.org to upload.wikimedia.org)
+  if (typeof img === 'string' && img.includes('wikimedia.org')) {
+    const m = img.match(/https?:\/\/(?:thumb|upload)\.wikimedia\.org\/wikipedia\/commons\/(?:thumb\/)?([0-9a-f]\/[0-9a-f]{2}\/[^/?#]+)/i);
+    if (m) {
+      return `https://upload.wikimedia.org/wikipedia/commons/${m[1]}`;
+    }
+  }
+
+  return img || '/assets/botanical_canvas.jpg';
 }
 
 export async function fetchPlants(category = 'All', search = '') {
@@ -2052,7 +2082,7 @@ export async function identifyPlantImage(imageFile, hint = '', userId = null, pr
       if (userId) formData.append('user_id', userId);
       if (preferredOrgan) formData.append('organ', preferredOrgan);
 
-      const res = await fetch('/api/identify', {
+      const res = await fetch(`${API_BASE}/identify`, {
         method: 'POST',
         body: formData
       });
