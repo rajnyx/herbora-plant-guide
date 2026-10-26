@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, Home, BookOpen, Bookmark, Camera, Clock, Sparkles, Sprout, HelpCircle, MessageSquare, Info, LogIn } from 'lucide-react';
+import { X, Home, BookOpen, Bookmark, Camera, Clock, Sparkles, Sprout, HelpCircle, MessageSquare, Info } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSelector from './LanguageSelector';
 import HerboraEmblem from './HerboraEmblem';
@@ -123,9 +123,9 @@ export default function NavigationDrawer({
           })}
         </div>
 
-        {/* Drawer Footer: User Profile / Auth State */}
-        <div className="p-4 border-t border-[#DDD6C3] bg-[#FAF6EE]/80">
-          {currentUser ? (
+        {/* Drawer Footer: User Profile */}
+        {currentUser && (
+          <div className="p-4 border-t border-[#DDD6C3] bg-[#FAF6EE]/80">
             <div 
               className="w-full p-2.5 rounded-xl bg-white border border-[#DDD6C3] flex items-center justify-between cursor-pointer hover:border-[#113E21] hover:bg-[#FAF6EE] transition-all group"
               onClick={() => { onClose(); if (onOpenProfile) onOpenProfile(); }}
@@ -143,16 +143,8 @@ export default function NavigationDrawer({
                 </div>
               </div>
             </div>
-          ) : (
-            <button
-              onClick={() => { onClose(); onOpenAuth(); }}
-              className="w-full py-2.5 px-4 herbora-btn-primary rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-xs cursor-pointer"
-            >
-              <LogIn className="w-4 h-4" />
-              <span>{t('nav.logInToSave')}</span>
-            </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Star, Send, Heart, BookOpen, CheckCircle2 } from 'lucide-react';
-import { submitUserFeedback } from '../services/api';
+import { ShieldAlert, Star, Send, Heart, BookOpen, CheckCircle2, Mail } from 'lucide-react';
+import { submitUserFeedback, getCurrentUser } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function AboutPage() {
   const { t, isHindi } = useLanguage();
+  const currentUser = getCurrentUser();
   const [rating, setRating] = useState(5);
   const [feedbackMsg, setFeedbackMsg] = useState('');
+  const [senderEmail, setSenderEmail] = useState(currentUser?.email || '');
+  const [senderName, setSenderName] = useState(currentUser?.full_name || '');
   const [submitted, setSubmitted] = useState(false);
+  const [lastFeedback, setLastFeedback] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleFeedback = async (e) => {
@@ -16,7 +20,8 @@ export default function AboutPage() {
 
     setLoading(true);
     try {
-      await submitUserFeedback(rating, feedbackMsg);
+      await submitUserFeedback(rating, feedbackMsg, senderEmail, senderName);
+      setLastFeedback({ rating, message: feedbackMsg, email: senderEmail, name: senderName });
       setSubmitted(true);
       setFeedbackMsg('');
     } catch (err) {
@@ -124,9 +129,42 @@ export default function AboutPage() {
         </div>
 
         {submitted ? (
-          <div className="p-4 rounded-xl bg-[#F0F7F2] border border-[#BBDDC3] text-center text-xs text-[#285D36] flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>{isHindi ? 'हर्बोरा पर अपने विचार व प्रतिक्रिया साझा करने के लिए धन्यवाद!' : 'Thank you for sharing your feedback on Herbora!'}</span>
+          <div className="p-5 rounded-2xl bg-[#F0F7F2] border border-[#BBDDC3] text-center space-y-3">
+            <div className="w-10 h-10 rounded-full bg-[#E2ECD5] flex items-center justify-center mx-auto text-[#113E21]">
+              <CheckCircle2 className="w-6 h-6 text-[#285D36]" />
+            </div>
+            <div>
+              <h3 className="font-serif text-lg font-bold text-[#113E21]">
+                {isHindi ? 'प्रतिक्रिया सफलतापूर्वक भेज दी गई है!' : 'Feedback Sent Successfully!'}
+              </h3>
+              <p className="text-xs text-[#285D36] mt-1 max-w-md mx-auto">
+                {isHindi 
+                  ? 'आपकी प्रतिक्रिया सीधे rajsingh2007.rs@gmail.com पर भेज दी गई है। हर्बोरा को बेहतर बनाने के लिए धन्यवाद!'
+                  : 'Your feedback has been submitted for rajsingh2007.rs@gmail.com. Thank you for helping us improve Herbora!'}
+              </p>
+            </div>
+
+            {/* Direct Mailto Fallback Action */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+              <a
+                href={`mailto:rajsingh2007.rs@gmail.com?subject=${encodeURIComponent(`[Herbora Feedback] ${lastFeedback?.rating || 5}/5 Stars`)}&body=${encodeURIComponent(`Rating: ${lastFeedback?.rating || 5}/5 Stars\nSubmitted by: ${lastFeedback?.name || 'Herbora User'} ${lastFeedback?.email ? `(${lastFeedback.email})` : ''}\n\nFeedback:\n${lastFeedback?.message || ''}`)}`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-[#BBDDC3] text-[#113E21] hover:bg-[#E2ECD5] text-xs font-semibold transition-all cursor-pointer"
+                title="Open in your default email client"
+              >
+                <Mail className="w-3.5 h-3.5 text-[#4E8738]" />
+                <span>{isHindi ? 'ईमेल ऐप में कॉपी खोलें' : 'Send copy via Email App'}</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmitted(false);
+                  setFeedbackMsg('');
+                }}
+                className="text-xs text-[#4E8738] hover:text-[#113E21] font-semibold underline underline-offset-4 cursor-pointer px-2 py-1"
+              >
+                {isHindi ? 'एक और प्रतिक्रिया भेजें' : 'Send another response'}
+              </button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleFeedback} className="space-y-4">
@@ -136,7 +174,7 @@ export default function AboutPage() {
                   key={star}
                   type="button"
                   onClick={() => setRating(star)}
-                  className="p-1 text-2xl transition-transform hover:scale-110 focus:outline-none"
+                  className="p-1 text-2xl transition-transform hover:scale-110 focus:outline-none cursor-pointer"
                 >
                   <Star 
                     className={`w-7 h-7 ${star <= rating ? 'fill-[#E29D32] text-[#E29D32]' : 'text-[#E2DDD0]'}`} 
@@ -156,14 +194,49 @@ export default function AboutPage() {
               />
             </div>
 
+            {/* Optional Submitter Contact Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#43634E] mb-1">
+                  {isHindi ? 'आपका नाम (वैकल्पिक)' : 'Your Name (optional)'}
+                </label>
+                <input
+                  type="text"
+                  value={senderName}
+                  onChange={(e) => setSenderName(e.target.value)}
+                  placeholder={isHindi ? 'नाम दर्ज करें...' : 'e.g. Raj or Student'}
+                  className="w-full text-xs p-2.5 rounded-xl bg-white border border-[#E2DDD0] text-[#174B2B] outline-none focus:border-[#285D36]"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-[#43634E] mb-1">
+                  {isHindi ? 'ईमेल (वैकल्पिक)' : 'Your Email (optional)'}
+                </label>
+                <input
+                  type="email"
+                  value={senderEmail}
+                  onChange={(e) => setSenderEmail(e.target.value)}
+                  placeholder="your.email@example.com"
+                  className="w-full text-xs p-2.5 rounded-xl bg-white border border-[#E2DDD0] text-[#174B2B] outline-none focus:border-[#285D36]"
+                />
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={loading || !feedbackMsg.trim()}
-              className="w-full herbora-btn-primary py-3 justify-center text-sm cursor-pointer disabled:opacity-50"
+              className="w-full herbora-btn-primary py-3 justify-center text-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
             >
               <Send className="w-4 h-4" />
-              <span>{loading ? (isHindi ? 'भेजा जा रहा है...' : 'Submitting...') : (isHindi ? 'प्रतिक्रिया भेजें' : 'Send Feedback')}</span>
+              <span>
+                {loading 
+                  ? (isHindi ? 'भेजा जा रहा है...' : 'Sending to rajsingh2007.rs@gmail.com...') 
+                  : (isHindi ? 'प्रतिक्रिया भेजें' : 'Send Feedback')}
+              </span>
             </button>
+            <p className="text-[11px] text-center text-[#556B5D]">
+              {isHindi ? 'प्रतिक्रिया सीधे rajsingh2007.rs@gmail.com पर प्रेषित की जाती है' : 'Feedback is delivered to rajsingh2007.rs@gmail.com'}
+            </p>
           </form>
         )}
       </div>
