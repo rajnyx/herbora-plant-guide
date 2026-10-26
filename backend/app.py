@@ -7,7 +7,14 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables: project root .env first, then backend .env
+_base_dir = os.path.dirname(os.path.abspath(__file__))
+_root_env = os.path.abspath(os.path.join(_base_dir, '..', '.env'))
+_backend_env = os.path.abspath(os.path.join(_base_dir, '.env'))
+if os.path.exists(_root_env):
+    load_dotenv(dotenv_path=_root_env, override=False)
+if os.path.exists(_backend_env):
+    load_dotenv(dotenv_path=_backend_env, override=False)
 load_dotenv()
 
 from models import init_db, SessionLocal, Plant, CommunityPost
