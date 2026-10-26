@@ -20,36 +20,32 @@ load_dotenv()
 from models import init_db, SessionLocal, Plant, CommunityPost
 from routes import api_bp
 
-def create_app():
-    app = Flask(__name__)
-    
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": "*",
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "X-User-Id"]
-        }
+# Primary Flask application instance for Vercel Serverless and WSGI runtimes
+app = Flask(__name__)
+application = app
+
+CORS(app, resources={
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "X-User-Id"]
+    }
+})
+
+# Register blueprints
+app.register_blueprint(api_bp)
+
+
+@app.route('/')
+def root():
+    return jsonify({
+        "name": "Herbora Ayurvedic API",
+        "tagline": "Ancient Wisdom • Modern Discovery",
+        "endpoints": "/api/health, /api/plants, /api/identify, /api/chat, /api/dincharya, /api/remedies"
     })
 
-    # Register blueprints
-    app.register_blueprint(api_bp)
-
-    # Initialize tables and seed data (in serverless/Vercel, skip heavy sync on cold starts)
-    if os.getenv("VERCEL") is None or os.getenv("RUN_DB_INIT_ON_STARTUP", "false").lower() == "true":
-        try:
-            init_db()
-            seed_initial_data()
-        except Exception as e:
-            print(f"Startup DB init notice (safe to continue): {e}")
-
-    @app.route('/')
-    def root():
-        return jsonify({
-            "name": "Herbora Ayurvedic API",
-            "tagline": "Ancient Wisdom • Modern Discovery",
-            "endpoints": "/api/health, /api/plants, /api/identify, /api/chat, /api/dincharya, /api/remedies"
-        })
-
+def create_app():
+    """Application factory compatibility wrapper"""
     return app
 
 def seed_initial_data():
@@ -331,9 +327,14 @@ def seed_initial_data():
     finally:
         db.close()
 
-# Expose Flask application instance for Vercel Serverless Functions and WSGI runtimes
-app = create_app()
-application = app
+# Initialize tables and seed data (in serverless/Vercel, skip heavy sync on cold starts)
+if os.getenv("VERCEL") is None or os.getenv("RUN_DB_INIT_ON_STARTUP", "false").lower() == "true":
+    try:
+        init_db()
+        seed_initial_data()
+    except Exception as e:
+        print(f"Startup DB init notice (safe to continue): {e}")
+
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
