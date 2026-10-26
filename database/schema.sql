@@ -20,8 +20,31 @@ CREATE TABLE IF NOT EXISTS public.plants (
   source_references JSONB NOT NULL DEFAULT '[]'::jsonb,
   is_published BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- Classical Ayurvedic (Dravyaguna) Properties
+  sanskrit_synonyms JSONB NOT NULL DEFAULT '[]'::jsonb,
+  part_used JSONB NOT NULL DEFAULT '[]'::jsonb,
+  main_indications JSONB NOT NULL DEFAULT '[]'::jsonb,
+  pacify JSONB NOT NULL DEFAULT '[]'::jsonb,
+  aggravate JSONB NOT NULL DEFAULT '[]'::jsonb,
+  tridosha BOOLEAN NOT NULL DEFAULT false,
+  rasa JSONB NOT NULL DEFAULT '[]'::jsonb,
+  guna JSONB NOT NULL DEFAULT '[]'::jsonb,
+  virya TEXT,
+  vipaka TEXT,
+  prabhav JSONB NOT NULL DEFAULT '[]'::jsonb,
+  family TEXT,
+  english_name TEXT,
+  monograph_url TEXT
 );
+
+-- Indexes for efficient botanical & Ayurvedic lookup
+CREATE INDEX IF NOT EXISTS idx_plants_scientific_name ON public.plants (scientific_name);
+CREATE INDEX IF NOT EXISTS idx_plants_ayurvedic_name ON public.plants (ayurvedic_name);
+CREATE INDEX IF NOT EXISTS idx_plants_category ON public.plants (category);
+CREATE INDEX IF NOT EXISTS idx_plants_virya ON public.plants (virya);
+CREATE INDEX IF NOT EXISTS idx_plants_family ON public.plants (family);
+CREATE INDEX IF NOT EXISTS idx_plants_english_name ON public.plants (english_name);
 
 -- RLS for plants
 ALTER TABLE public.plants ENABLE ROW LEVEL SECURITY;

@@ -5,7 +5,7 @@ Supports both SQLite (local development) and Supabase PostgreSQL
 import os
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import create_engine, Column, String, Text, Integer, Float, Boolean, DateTime, ForeignKey, JSON, UniqueConstraint
+from sqlalchemy import create_engine, Column, String, Text, Integer, Float, Boolean, DateTime, ForeignKey, JSON, UniqueConstraint, text
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 Base = declarative_base()
@@ -16,8 +16,8 @@ class Plant(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     slug = Column(String(100), unique=True, nullable=False, index=True)
     common_name = Column(String(150), nullable=False)
-    scientific_name = Column(String(150), nullable=False)
-    ayurvedic_name = Column(String(150), nullable=True)
+    scientific_name = Column(String(150), nullable=False, index=True)
+    ayurvedic_name = Column(String(150), nullable=True, index=True)
     regional_names = Column(JSON, default=list)
     category = Column(String(80), nullable=False, index=True)
     description = Column(Text, nullable=False)
@@ -31,6 +31,22 @@ class Plant(Base):
     is_published = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Classical Ayurvedic (Dravyaguna) Attributes
+    sanskrit_synonyms = Column(JSON, default=list)
+    part_used = Column(JSON, default=list)
+    main_indications = Column(JSON, default=list)
+    pacify = Column(JSON, default=list)
+    aggravate = Column(JSON, default=list)
+    tridosha = Column(Boolean, default=False)
+    rasa = Column(JSON, default=list)
+    guna = Column(JSON, default=list)
+    virya = Column(String(80), nullable=True, index=True)
+    vipaka = Column(String(80), nullable=True)
+    prabhav = Column(JSON, default=list)
+    family = Column(String(100), nullable=True, index=True)
+    english_name = Column(String(150), nullable=True, index=True)
+    monograph_url = Column(String(500), nullable=True)
 
     saved_by_users = relationship("UserSavedPlant", back_populates="plant", cascade="all, delete-orphan")
 
@@ -52,7 +68,22 @@ class Plant(Base):
             "image_url": self.image_url,
             "source_references": self.source_references or [],
             "is_published": self.is_published,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            # Extended Ayurvedic (Dravyaguna) Properties
+            "sanskrit_synonyms": self.sanskrit_synonyms or [],
+            "part_used": self.part_used or [],
+            "main_indications": self.main_indications or [],
+            "pacify": self.pacify or [],
+            "aggravate": self.aggravate or [],
+            "tridosha": bool(self.tridosha) if self.tridosha is not None else False,
+            "rasa": self.rasa or [],
+            "guna": self.guna or [],
+            "virya": self.virya,
+            "vipaka": self.vipaka,
+            "prabhav": self.prabhav or [],
+            "family": self.family,
+            "english_name": self.english_name,
+            "monograph_url": self.monograph_url
         }
 
 
@@ -241,9 +272,45 @@ def get_db():
 
 def init_db():
     Base.metadata.create_all(bind=engine)
-    # Ensure user_id column exists on community_posts in SQLite
+    # Ensure any newly added columns exist in SQLite without dropping tables
+    new_columns = [
+        ("community_posts", "user_id", "VARCHAR(36)"),
+        ("plants", "sanskrit_synonyms", "JSON"),
+        ("plants", "part_used", "JSON"),
+        ("plants", "main_indications", "JSON"),
+        ("plants", "pacify", "JSON"),
+        ("plants", "aggravate", "JSON"),
+        ("plants", "tridosha", "BOOLEAN DEFAULT 0"),
+        ("plants", "rasa", "JSON"),
+        ("plants", "guna", "JSON"),
+        ("plants", "virya", "VARCHAR(80)"),
+        ("plants", "vipaka", "VARCHAR(80)"),
+        ("plants", "prabhav", "JSON"),
+        ("plants", "family", "VARCHAR(100)"),
+        ("plants", "english_name", "VARCHAR(150)"),
+        ("plants", "monograph_url", "VARCHAR(500)"),
+    ]
+    index_statements = [
+        "CREATE INDEX IF NOT EXISTS idx_plants_scientific_name ON plants (scientific_name);",
+        "CREATE INDEX IF NOT EXISTS idx_plants_ayurvedic_name ON plants (ayurvedic_name);",
+        "CREATE INDEX IF NOT EXISTS idx_plants_category ON plants (category);",
+        "CREATE INDEX IF NOT EXISTS idx_plants_virya ON plants (virya);",
+        "CREATE INDEX IF NOT EXISTS idx_plants_family ON plants (family);",
+        "CREATE INDEX IF NOT EXISTS idx_plants_english_name ON plants (english_name);",
+    ]
     try:
         with engine.connect() as conn:
-            conn.execute("ALTER TABLE community_posts ADD COLUMN user_id VARCHAR(36);")
+            for table, col, col_type in new_columns:
+                try:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {col_type};"))
+                    conn.commit()
+                except Exception:
+                    pass
+            for idx_stmt in index_statements:
+                try:
+                    conn.execute(text(idx_stmt))
+                    conn.commit()
+                except Exception:
+                    pass
     except Exception:
         pass
