@@ -96,7 +96,7 @@ export default defineConfig({
         configure: (proxy) => {
           proxy.on('error', (err, req, res) => {
             if (res && res.writeHead && !res.headersSent) {
-              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.writeHead(503, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ error: 'Backend temporarily offline', fallback: true }));
             }
           });

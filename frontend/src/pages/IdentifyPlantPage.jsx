@@ -12,7 +12,6 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [activeHint, setActiveHint] = useState('');
-  const [selectedOrgan, setSelectedOrgan] = useState('auto');
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -80,7 +79,7 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
     setErrorMsg('');
 
     try {
-      const data = await identifyPlantImage(selectedFile, activeHint, currentUser?.id, selectedOrgan);
+      const data = await identifyPlantImage(selectedFile, activeHint, currentUser?.id, 'auto');
       setResult(data);
     } catch (err) {
       setErrorMsg(err.message || 'Plant identification service encountered an error. Please try again.');
@@ -178,31 +177,6 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
                     <p className="font-serif text-lg font-medium">Analyzing botanical markers...</p>
                   </div>
                 )}
-              </div>
-
-              {/* Organ Focus Selector */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#EAE6DC]">
-                <span className="text-xs font-semibold text-[#637869] mr-1">Organ:</span>
-                {[
-                  { id: 'auto', label: 'Auto' },
-                  { id: 'leaf', label: 'Leaf' },
-                  { id: 'flower', label: 'Flower' },
-                  { id: 'fruit', label: 'Fruit' },
-                  { id: 'bark', label: 'Stem / Bark' }
-                ].map((org) => (
-                  <button
-                    key={org.id}
-                    type="button"
-                    onClick={() => setSelectedOrgan(org.id)}
-                    className={`text-xs px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer ${
-                      selectedOrgan === org.id
-                        ? 'bg-[#174B2B] text-white shadow-2xs font-bold'
-                        : 'bg-[#EDE6D5] text-[#2D3E33] hover:bg-[#E2DDD0]'
-                    }`}
-                  >
-                    {org.label}
-                  </button>
-                ))}
               </div>
 
               {/* Control Buttons */}

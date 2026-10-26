@@ -45,7 +45,7 @@ export default function App() {
   const [savedPlantIds, setSavedPlantIds] = useState(new Set());
   const [notification, setNotification] = useState('');
 
-  // Track Supabase Auth session
+  // Track Supabase Auth session & handle verification redirects
   useEffect(() => {
     getCurrentUser().then((user) => {
       setCurrentUser(user || null);
@@ -54,6 +54,22 @@ export default function App() {
     const unsubscribe = subscribeToAuthChanges((user) => {
       setCurrentUser(user);
     });
+
+    // Check for email verification redirect or auth errors in URL
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+
+      if (hash.includes('access_token') || hash.includes('type=signup') || hash.includes('type=recovery')) {
+        showToast('🌿 Email confirmed successfully! Welcome to Herbora.');
+        window.history.replaceState(null, '', window.location.pathname);
+      } else if (hash.includes('error=') || search.includes('error=')) {
+        const params = new URLSearchParams(hash.replace('#', '?') || search);
+        const desc = params.get('error_description') || 'Verification link expired or invalid.';
+        showToast(`⚠️ ${desc.replace(/\+/g, ' ')}`);
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
 
     return () => unsubscribe();
   }, []);
@@ -283,7 +299,10 @@ export default function App() {
         onClose={() => setIsAuthOpen(false)}
         onAuthSuccess={(user) => {
           setCurrentUser(user);
-          showToast(`Welcome back, ${user.full_name || user.email}!`);
+          const displayName = user?.user_metadata?.full_name 
+            || user?.full_name 
+            || (user?.email ? user.email.split('@')[0] : 'Herbalist');
+          showToast(`Welcome back, ${displayName}!`);
         }}
       />
 

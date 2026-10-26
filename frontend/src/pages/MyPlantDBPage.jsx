@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bookmark, Trash2, ArrowRight, BookOpen, LogIn, Sprout } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { getPlantImageUrl } from '../services/api';
 
 export default function MyPlantDBPage({
   currentUser,
@@ -119,15 +120,16 @@ export default function MyPlantDBPage({
                   {/* Thumbnail Image */}
                   <div className="w-full h-44 rounded-xl overflow-hidden mb-4 border border-[#E2DDD0] bg-[#F7F4EA] relative">
                     <img 
-                      src={plant.image_url || `/assets/${plant.slug}.jpg`} 
+                      src={plant.image_url || getPlantImageUrl(plant)} 
                       alt={plant.common_name} 
                       className="w-full h-full object-cover object-center"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        if (!e.currentTarget.src.includes(`${plant.slug}.jpg`)) {
-                          e.currentTarget.src = `/assets/${plant.slug}.jpg`;
+                        const fallback = getPlantImageUrl(plant);
+                        if (fallback && e.currentTarget.src !== fallback) {
+                          e.currentTarget.src = fallback;
                         } else {
-                          e.currentTarget.src = '/assets/herbal-wellness.jpg';
+                          e.currentTarget.src = '/assets/botanical_canvas.jpg';
                         }
                       }}
                     />

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import plantImages from '../data/plant_images.json';
 
 // Supabase Client initialization using Vite environment variables
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
@@ -15,6 +16,19 @@ export const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY)
   : null;
 
 const API_BASE = '/api';
+
+// --- User Normalization Helper ---
+export function formatUser(user) {
+  if (!user) return null;
+  const fullName = user.user_metadata?.full_name 
+    || user.user_metadata?.name 
+    || user.full_name 
+    || (user.email ? user.email.split('@')[0] : 'Herbalist');
+  return {
+    ...user,
+    full_name: fullName
+  };
+}
 
 // --- Auth State Subscribers ---
 const authSubscribers = new Set();
@@ -62,27 +76,90 @@ export async function isBackendAvailable() {
 export async function signUpWithEmail(email, password, fullName = '') {
   // 1. Primary: Supabase Auth
   if (supabase) {
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/` : 'http://localhost:5173/';
     const { data, error } = await withTimeout(supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName }
+        data: { full_name: fullName },
+        emailRedirectTo: redirectUrl
       }
     }), 8000);
 
     if (error) {
+      const msg = (error.message || '').toLowerCase();
+      const code = (error.code || '').toLowerCase();
+
+      // Check if user already exists or rate limit is hit
+      const isAlreadyRegistered = msg.includes('already registered') || 
+                                  msg.includes('already exists') || 
+                                  code.includes('user_already_exists');
+      const isRateLimit = msg.includes('rate limit') || 
+                          code.includes('over_email_send_rate_limit') || 
+                          error.status === 429;
+
+      if (isAlreadyRegistered || isRateLimit) {
+        // Attempt automatic sign-in if the user entered their matching password!
+        try {
+          const signInRes = await supabase.auth.signInWithPassword({ email, password });
+          if (signInRes.data?.user) {
+            const formatted = formatUser(signInRes.data.user);
+            localStorage.setItem('herbora_user_session', JSON.stringify(formatted));
+            notifyAuthSubscribers(formatted);
+            return {
+              user: formatted,
+              session: signInRes.data.session,
+              needsEmailConfirmation: false,
+              alreadyExisted: true
+            };
+          }
+        } catch (signInErr) {
+          if (signInErr.message?.toLowerCase().includes('email not confirmed')) {
+            throw new Error('This email is already registered, but email confirmation is pending. Please check your inbox for the confirmation link.');
+          }
+        }
+
+        throw new Error('This email is already registered. Please sign in instead.');
+      }
+
       throw error;
     }
 
     if (data?.user) {
+      // In Supabase, if an email is already registered and confirmed, signUp returns user with identities: []
+      if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        // Try to sign in with the provided password
+        try {
+          const signInRes = await supabase.auth.signInWithPassword({ email, password });
+          if (signInRes.data?.user) {
+            const formatted = formatUser(signInRes.data.user);
+            localStorage.setItem('herbora_user_session', JSON.stringify(formatted));
+            notifyAuthSubscribers(formatted);
+            return {
+              user: formatted,
+              session: signInRes.data.session,
+              needsEmailConfirmation: false,
+              alreadyExisted: true
+            };
+          }
+        } catch (signInErr) {
+          if (signInErr.message?.toLowerCase().includes('email not confirmed')) {
+            throw new Error('This email is already registered, but email confirmation is pending. Please check your inbox for the confirmation link.');
+          }
+        }
+
+        throw new Error('This email is already registered. Please sign in instead.');
+      }
+
+      const formatted = formatUser(data.user);
       // If email confirmation is required by Supabase project settings, session will be null
       const needsEmailConfirmation = !data.session;
       if (data.session) {
-        localStorage.setItem('herbora_user_session', JSON.stringify(data.user));
-        notifyAuthSubscribers(data.user);
+        localStorage.setItem('herbora_user_session', JSON.stringify(formatted));
+        notifyAuthSubscribers(formatted);
       }
       return {
-        user: data.user,
+        user: formatted,
         session: data.session,
         needsEmailConfirmation
       };
@@ -101,36 +178,114 @@ export async function signUpWithEmail(email, password, fullName = '') {
     if (!res.ok) {
       throw new Error(json.error || 'Failed to create account');
     }
-    localStorage.setItem('herbora_user_session', JSON.stringify(json.user));
-    notifyAuthSubscribers(json.user);
-    return { user: json.user, session: null, needsEmailConfirmation: false };
+    const formatted = formatUser(json.user);
+    localStorage.setItem('herbora_user_session', JSON.stringify(formatted));
+    notifyAuthSubscribers(formatted);
+    return { user: formatted, session: null, needsEmailConfirmation: false };
   }
 
   throw new Error("Authentication service is unavailable. Please verify your Supabase configuration in frontend/.env.");
 }
 
 export async function signInWithEmail(email, password) {
+  const cleanEmail = (email || '').trim().toLowerCase();
+  if (!cleanEmail || !cleanEmail.includes('@')) {
+    throw new Error('Please enter a valid email address.');
+  }
+  if (!password) {
+    throw new Error('Please enter your password.');
+  }
+
   // 1. Primary: Supabase Auth
   if (supabase) {
     const { data, error } = await withTimeout(supabase.auth.signInWithPassword({
-      email,
+      email: cleanEmail,
       password
     }), 8000);
 
     if (error) {
-      if (error.message?.toLowerCase().includes('email not confirmed')) {
-        throw new Error('Please confirm your email address before signing in. Check your inbox for the confirmation link.');
+      const msg = (error.message || '').toLowerCase();
+      const code = (error.code || '').toLowerCase();
+
+      // Explicit case 1: Email unconfirmed
+      if (msg.includes('email not confirmed') || code.includes('email_not_confirmed')) {
+        const unconfirmedErr = new Error('Your email address has not been confirmed yet. Please check your inbox for the confirmation link.');
+        unconfirmedErr.code = 'EMAIL_NOT_CONFIRMED';
+        throw unconfirmedErr;
       }
-      if (error.message?.toLowerCase().includes('invalid login credentials')) {
-        throw new Error('Invalid email or password. Please verify your credentials or create a new account.');
+
+      // Explicit case 2: Rate limited
+      if (msg.includes('rate limit') || code.includes('over_email_send_rate_limit') || error.status === 429) {
+        throw new Error('Too many sign-in attempts. Please wait a few moments before trying again.');
       }
+
+      // Explicit case 3: "Invalid login credentials" -> Accurately diagnose whether email exists vs wrong password!
+      if (msg.includes('invalid login credentials') || code.includes('invalid_credentials')) {
+        // Step A: Check via Supabase PostgreSQL RPC function check_user_email
+        try {
+          const { data: checkData, error: rpcErr } = await supabase.rpc('check_user_email', {
+            email_to_check: cleanEmail
+          });
+
+          if (!rpcErr && checkData && typeof checkData === 'object') {
+            if (checkData.exists === false) {
+              const notFoundErr = new Error('No account found with this email address. Please create an account.');
+              notFoundErr.code = 'USER_NOT_FOUND';
+              notFoundErr.email = cleanEmail;
+              throw notFoundErr;
+            }
+            if (checkData.exists === true && !checkData.confirmed) {
+              const unconfirmedErr = new Error('Your email address has not been confirmed yet. Please check your inbox for the confirmation link.');
+              unconfirmedErr.code = 'EMAIL_NOT_CONFIRMED';
+              throw unconfirmedErr;
+            }
+            if (checkData.exists === true && checkData.confirmed) {
+              const wrongPassErr = new Error('Incorrect password. Please verify your password and try again.');
+              wrongPassErr.code = 'WRONG_PASSWORD';
+              throw wrongPassErr;
+            }
+          }
+        } catch (diagErr) {
+          if (diagErr.code) throw diagErr;
+        }
+
+        // Step B: Secondary check via backend check-email endpoint
+        try {
+          const res = await fetch(`${API_BASE}/auth/check-email?email=${encodeURIComponent(cleanEmail)}`);
+          if (res.ok) {
+            const checkData = await res.json();
+            if (checkData.exists === false) {
+              const notFoundErr = new Error('No account found with this email address. Please create an account.');
+              notFoundErr.code = 'USER_NOT_FOUND';
+              notFoundErr.email = cleanEmail;
+              throw notFoundErr;
+            }
+            if (checkData.exists === true && checkData.confirmed === false) {
+              const unconfirmedErr = new Error('Your email address has not been confirmed yet. Please check your inbox for the confirmation link.');
+              unconfirmedErr.code = 'EMAIL_NOT_CONFIRMED';
+              throw unconfirmedErr;
+            }
+            if (checkData.exists === true) {
+              const wrongPassErr = new Error('Incorrect password. Please verify your password and try again.');
+              wrongPassErr.code = 'WRONG_PASSWORD';
+              throw wrongPassErr;
+            }
+          }
+        } catch (backendDiagErr) {
+          if (backendDiagErr.code) throw backendDiagErr;
+        }
+
+        throw new Error('Invalid email or password. Please verify your credentials or create an account.');
+      }
+
       throw error;
     }
 
     if (data?.user) {
-      localStorage.setItem('herbora_user_session', JSON.stringify(data.user));
-      notifyAuthSubscribers(data.user);
-      return data;
+      const formatted = formatUser(data.user);
+      localStorage.setItem('herbora_user_session', JSON.stringify(formatted));
+      notifyAuthSubscribers(formatted);
+      return { ...data, user: formatted };
     }
   }
 
@@ -140,15 +295,18 @@ export async function signInWithEmail(email, password) {
     const res = await fetch(`${API_BASE}/auth/signin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email: cleanEmail, password })
     });
     const json = await res.json();
     if (!res.ok) {
-      throw new Error(json.error || 'Invalid email or password');
+      const err = new Error(json.error || 'Invalid email or password');
+      if (json.code) err.code = json.code;
+      throw err;
     }
-    localStorage.setItem('herbora_user_session', JSON.stringify(json.user));
-    notifyAuthSubscribers(json.user);
-    return { user: json.user, session: null };
+    const formatted = formatUser(json.user);
+    localStorage.setItem('herbora_user_session', JSON.stringify(formatted));
+    notifyAuthSubscribers(formatted);
+    return { user: formatted, session: null };
   }
 
   throw new Error("Unable to sign in. Please verify that your Supabase credentials or backend server are configured.");
@@ -171,8 +329,9 @@ export async function getCurrentUser() {
     try {
       const { data: { user } } = await withTimeout(supabase.auth.getUser(), 3000);
       if (user) {
-        localStorage.setItem('herbora_user_session', JSON.stringify(user));
-        return user;
+        const formatted = formatUser(user);
+        localStorage.setItem('herbora_user_session', JSON.stringify(formatted));
+        return formatted;
       }
     } catch {
       // Supabase offline, check cached session
@@ -183,7 +342,7 @@ export async function getCurrentUser() {
   const stored = localStorage.getItem('herbora_user_session');
   if (stored) {
     try {
-      return JSON.parse(stored);
+      return formatUser(JSON.parse(stored));
     } catch {
       return null;
     }
@@ -199,8 +358,9 @@ export function subscribeToAuthChanges(callback) {
     try {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (session?.user) {
-          localStorage.setItem('herbora_user_session', JSON.stringify(session.user));
-          callback(session.user);
+          const formatted = formatUser(session.user);
+          localStorage.setItem('herbora_user_session', JSON.stringify(formatted));
+          callback(formatted);
         } else if (event === 'SIGNED_OUT') {
           localStorage.removeItem('herbora_user_session');
           callback(null);
@@ -653,6 +813,7 @@ export const FALLBACK_REMEDIES = [
   {
     id: "remedy-1",
     icon: "🍯",
+    category: "Immunity & Throat",
     title: "Honey & Holy Basil Tea",
     herb: "Tulsi (Ocimum sanctum)",
     preparation: "Crush 5-6 fresh Tulsi leaves into boiled water, steep for 5 minutes, let cool slightly to lukewarm, and stir in raw honey.",
@@ -662,6 +823,7 @@ export const FALLBACK_REMEDIES = [
   {
     id: "remedy-2",
     icon: "🥛",
+    category: "Joint Care & Mobility",
     title: "Golden Turmeric Elixir",
     herb: "Turmeric (Curcuma longa)",
     preparation: "Whisk 1/2 tsp organic turmeric powder and a pinch of freshly ground black pepper into warm cow milk or almond milk with 1/4 tsp ghee.",
@@ -671,6 +833,7 @@ export const FALLBACK_REMEDIES = [
   {
     id: "remedy-3",
     icon: "🫚",
+    category: "Digestion & Bloating",
     title: "Agni Kindling Ginger Infusion",
     herb: "Ginger (Zingiber officinale)",
     preparation: "Grate 1 inch of fresh ginger root into a cup of hot water with a squeeze of fresh lime juice and a pinch of rock salt (Saindhava).",
@@ -680,34 +843,187 @@ export const FALLBACK_REMEDIES = [
   {
     id: "remedy-4",
     icon: "🌸",
+    category: "Cooling & Pitta",
     title: "Rose & Fennel Cooling Tonic",
     herb: "Fennel & Rose Petals",
     preparation: "Soak 1 tsp fennel seeds and organic rose petals overnight in cool water. Strain and sip during hot midday hours.",
     benefits: "Calms excess Pitta fire, reduces acid heartburn, and cools the liver and skin.",
     safety: "Excellent during summer months (Grishma Ritu) and high stress."
+  },
+  {
+    id: "remedy-5",
+    icon: "🌱",
+    category: "Immunity & Throat",
+    title: "Licorice & Cardamom Voice Elixir",
+    herb: "Yashtimadhu (Glycyrrhiza glabra) & Cardamom",
+    preparation: "Boil 1/2 tsp crushed organic licorice root and 2 crushed green cardamom pods in 1.5 cups water until reduced by half. Sip warm.",
+    benefits: "Lubricates vocal chords, coats inflamed pharyngeal mucosa, and eases hoarseness or persistent dry tickly cough.",
+    safety: "Those with chronic high blood pressure should avoid excessive daily licorice consumption due to glycyrrhizin retention."
+  },
+  {
+    id: "remedy-6",
+    icon: "🌙",
+    category: "Sleep & Stress",
+    title: "Ashwagandha Moon Milk",
+    herb: "Ashwagandha (Withania somnifera) & Nutmeg",
+    preparation: "Warm 1 cup cow or oat milk with 1/2 tsp Ashwagandha powder, a pinch of freshly grated nutmeg (Jaiphal), and 1 tsp raw sugar or ghee before bed.",
+    benefits: "Pacifies racing Vata minds, lowers cortisol, deeply rejuvenates the nervous system, and induces restorative REM sleep.",
+    safety: "Nutmeg is potent in micro-doses (a pinch only); avoid taking heavy doses during early pregnancy."
+  },
+  {
+    id: "remedy-7",
+    icon: "🌿",
+    category: "Digestion & Bloating",
+    title: "Amla & Cumin Digestive Coolant",
+    herb: "Amalaki (Phyllanthus emblica) & Jeera",
+    preparation: "Stir 1/2 tsp dry Amla powder and 1/2 tsp roasted cumin powder into 1 glass of fresh, room-temperature buttermilk or water.",
+    benefits: "Instantly neutralizes fiery Pitta hyperacidity, stops sour water brash, and stimulates cellular metabolic enzymes without heating the stomach.",
+    safety: "Take after midday lunch for optimal enzyme activation and digestive comfort."
+  },
+  {
+    id: "remedy-8",
+    icon: "🌾",
+    category: "Metabolism & Blood Sugar",
+    title: "Fenugreek & Cinnamon Glycemic Infusion",
+    herb: "Methika (Trigonella foenum-graecum) & Dalchini",
+    preparation: "Soak 1 tsp fenugreek seeds overnight in 1 cup water with a small Ceylon cinnamon stick. Strain and drink the golden water at dawn, chewing the softened seeds.",
+    benefits: "Enhances insulin sensitivity, slows post-prandial carbohydrate absorption, and tones sluggish Kapha lipid metabolism.",
+    safety: "Monitor blood glucose levels regularly if taking prescribed hypoglycemic medication."
+  },
+  {
+    id: "remedy-9",
+    icon: "🫚",
+    category: "Joint Care & Mobility",
+    title: "Dry Ginger & Castor Oil Joint Compress",
+    herb: "Shunthi (Zingiber officinale) & Eranda Taila",
+    preparation: "Mix 1 tbsp dry ginger powder with 2 tbsp warm castor oil into a warm paste. Apply locally over stiff, aching joints, wrapping with a warm cloth for 30 minutes.",
+    benefits: "Penetrates deep into joint capsules, clears accumulated metabolic toxicity (Ama), and relieves morning knee and finger stiffness.",
+    safety: "For external use only. Test a tiny patch of skin first to check for castor sensitivity."
+  },
+  {
+    id: "remedy-10",
+    icon: "🍃",
+    category: "Hair & Scalp Health",
+    title: "Bhringraj & Coconut Scalp Infusion",
+    herb: "Bhringraj (Eclipta alba) & Coconut Oil",
+    preparation: "Gently warm 3 tbsp organic coconut oil with 1 tsp Bhringraj powder in a water bath. Massage into the scalp in circular motions and leave for 1 hour before washing.",
+    benefits: "Cools excess heat in the scalp follicles (Pitta), strengthens the hair cortex, prevents premature graying, and dispels tension headaches.",
+    safety: "Wash with a gentle sulfate-free cleanser or herbal Shikakai powder for best results."
+  },
+  {
+    id: "remedy-11",
+    icon: "🫐",
+    category: "Eye & Gentle Detox",
+    title: "Triphala Eye & Cleansing Elixir",
+    herb: "Triphala (Amalaki, Bibhitaki, Haritaki)",
+    preparation: "Steep 1/2 tsp Triphala churna in 1 cup boiling water overnight. Filter through a double layer of sterile unbleached muslin cloth twice before using as an eye splash, or sip the decanted liquid for digestive toning.",
+    benefits: "Soothes tired screen eyes, reduces conjunctival redness, tones colon peristalsis, and removes mucosal toxins without dependence.",
+    safety: "Ensure liquid is impeccably filtered through multiple layers of clean cloth when used as an ocular wash."
+  },
+  {
+    id: "remedy-12",
+    icon: "🧊",
+    category: "Cooling & Pitta",
+    title: "Coriander & Mint Pitta Quencher",
+    herb: "Dhanyaka (Coriandrum sativum) & Pudina",
+    preparation: "Crush 1 tbsp whole coriander seeds and fresh mint leaves in 2 cups cool water. Let steep for 4 hours, strain, and sip with a drop of raw rock sugar (Mishri).",
+    benefits: "Classical 'Hima' (cold infusion) that relieves burning sensations during urination, soothes heat prickly skin rashes, and quenches intense thirst.",
+    safety: "Best consumed freshly made on the same day; ideal during Grishma (summer) and Sharad (autumn)."
+  },
+  {
+    id: "remedy-13",
+    icon: "🌿",
+    category: "Digestion & Bloating",
+    title: "Ajwain & Rock Salt Rapid Carminative",
+    herb: "Ajwain (Trachyspermum ammi) & Saindhava",
+    preparation: "Take 1/2 tsp ajwain seeds with a pinch of rock salt (Saindhava Lavana) and chew thoroughly followed by 1/2 cup warm water.",
+    benefits: "Relieves spasmodic stomach gas, abdominal colic, and acute indigestion within 15 to 20 minutes by relaxing smooth intestinal muscles.",
+    safety: "Ajwain is strongly heating; do not consume in large quantities during acute hyperacidity or active ulcers."
+  },
+  {
+    id: "remedy-14",
+    icon: "✨",
+    category: "Vitality & Hormonal Balance",
+    title: "Shatavari & Saffron Vitality Nectar",
+    herb: "Shatavari (Asparagus racemosus) & Kesar",
+    preparation: "Simmer 1 tsp Shatavari root powder and 3-4 strands of pure Kashmiri saffron in 1 cup milk for 5 minutes. Sweeten lightly with raw honey once lukewarm.",
+    benefits: "Nourishes the deepest reproductive tissue (Shukra Dhatu), balances female menstrual and menopausal transitions, and replenishes Ojas (vital glow).",
+    safety: "Take after meals in the evening; avoid if experiencing heavy mucus congestion or acute respiratory cold."
   }
 ];
 
 export const FALLBACK_MYTHS = [
   {
     id: "myth-1",
+    category: "Safety & Dosage",
     myth: "Because Ayurvedic herbs are natural, they can never have side effects or contraindications.",
     fact: "Natural does not equal risk-free. Potent herbs like Ashwagandha, Neem, and Guggulu affect endocrine pathways, blood pressure, and liver metabolism. Classical texts insist on precise dosage (Matra), timing (Kala), and vehicle (Anupana)."
   },
   {
     id: "myth-2",
+    category: "Effectiveness & Speed",
     myth: "Ayurveda is only a slow-acting preventative discipline and cannot address immediate complaints.",
     fact: "While constitutional rejuvenation takes patience, acute remedies—such as fresh ginger for nausea, ajwain seeds for spasmodic bloating, or clove for toothaches—often provide relief in minutes to hours."
   },
   {
     id: "myth-3",
+    category: "Personalized Medicine",
     myth: "One Ayurvedic herbal supplement works equally well for all people with the same condition.",
     fact: "Ayurveda treats the unique individual (Prakriti and Vikriti), not the generic disease label. An herb that soothes a dry Vata cough might worsen a congested Kapha cough."
   },
   {
     id: "myth-4",
+    category: "Herbal Synergy",
     myth: "You can mix multiple Ayurvedic herbs together without any specific guidance.",
     fact: "In classical formulation (Samyoga), herbs possess mutual enhancing (Sahakari) or opposing (Viruddha) actions. Synergistic balance is essential for proper absorption."
+  },
+  {
+    id: "myth-5",
+    category: "Diet & Digestion",
+    myth: "Raw salads and cold green smoothies are the healthiest daily foods for every body type in Ayurveda.",
+    fact: "Classical Ayurveda cautions that raw, ice-cold foods are Guru (heavy to digest) and Sheeta (cold), which douses digestive Agni and severely aggravates Vata. Warm, lightly steamed, spiced meals are essential for optimal nutrient absorption."
+  },
+  {
+    id: "myth-6",
+    category: "Diet & Digestion",
+    myth: "Pure honey can be safely boiled, baked into warm pastries, or stirred into boiling tea without any drawback.",
+    fact: "Charaka Samhita warns that heated honey becomes toxic ('Madhu Ama'). High heat alters the chemical bonds of honey, creating a sticky, fermenting metabolic toxin that clogs micro-channels (Srotas) and impairs tissue metabolism."
+  },
+  {
+    id: "myth-7",
+    category: "Diet & Digestion",
+    myth: "Ghee is pure saturated fat and will inevitably clog your arteries and cause heart disease.",
+    fact: "Pure A2 cow's ghee is celebrated in Ayurveda as the supreme Rasayana and Agni kindle. Rich in butyric acid and fat-soluble vitamins (A, D, E, K), classical ghee lubricates connective tissues and transports medicinal phytochemicals across the blood-brain barrier."
+  },
+  {
+    id: "myth-8",
+    category: "Diet & Digestion",
+    myth: "Drinking large glasses of ice-cold water during or immediately after meals aids fat loss and cleanses the stomach.",
+    fact: "Drinking ice-cold water douses the digestive fire (Jatharagni) like pouring cold water on an open flame. This stops digestive enzymes, congeals dietary fats, and causes undigested food to ferment into toxic Ama. Warm or room-temperature sips are recommended."
+  },
+  {
+    id: "myth-9",
+    category: "Daily Practices",
+    myth: "Drinking water stored in copper vessels all day and all night is universally healthy without any limits.",
+    fact: "Tamra Jal (copper water) is an oligodynamic antimicrobial tonic intended only for morning Ushapana (1-2 glasses stored for 6–8 hours). Drinking copper water continuously all day for months can lead to copper toxicity, liver strain, and Pitta inflammation."
+  },
+  {
+    id: "myth-10",
+    category: "Herbal Synergy",
+    myth: "Consuming huge tablespoons of dry raw Turmeric powder daily gives maximum anti-inflammatory benefits.",
+    fact: "Isolated Curcumin in dry turmeric has poor intestinal bioavailability (under 1%). Classical Ayurveda always pairs Haridra with black pepper (piperine increases absorption up to 2000%) and healthy lipids like ghee or warm milk to carry it into deep Dhatus."
+  },
+  {
+    id: "myth-11",
+    category: "Safety & Dosage",
+    myth: "Chyawanprash is a general multi-vitamin and should be eaten in heavy spoonfuls during the hottest days of summer.",
+    fact: "Authentic Chyawanprash contains warming, pungent spices like Pippali, cinnamon, and cardamoms designed to kindle winter Agni and expel Kapha cold. Eating large amounts during scorching summer heat can aggravate Pitta, causing acid reflux or skin eruptions."
+  },
+  {
+    id: "myth-12",
+    category: "Daily Practices",
+    myth: "Complete waterless fasting for multiple consecutive days is the supreme detox for all constitutions.",
+    fact: "Ayurvedic 'Langhana' (therapeutic lightening) must be carefully customized to individual Prakriti. While robust Kapha constitutions can tolerate short water fasts, dry Vata individuals severely deplete their bodily tissues (Ojas & Dhatus) and damage Agni if they fast excessively without water."
   }
 ];
 
@@ -746,6 +1062,111 @@ export const FALLBACK_QUIZ = [
     options: ["Brahmi (Bacopa monnieri)", "Senna", "Fenugreek", "Mustard"],
     answerIndex: 0,
     explanation: "Bacopa monnieri (Brahmi) has been used for centuries by students and scholars to sharpen retention, tranquility, and memory."
+  },
+  {
+    id: 6,
+    question: "The classical Ayurvedic formula “Triphala” is composed of which three sacred medicinal fruits?",
+    options: ["Amalaki, Haritaki, and Bibhitaki", "Tulsi, Neem, and Giloy", "Ashwagandha, Shatavari, and Bala", "Ginger, Black Pepper, and Pippali"],
+    answerIndex: 0,
+    explanation: "Triphala ('Three Fruits') consists of Amalaki (Emblica officinalis), Haritaki (Terminalia chebula), and Bibhitaki (Terminalia bellirica), harmonizing all three doshas."
+  },
+  {
+    id: 7,
+    question: "Which bitter botanical is historically termed “Arishta” ('Reliever of Sickness') and used for skin and blood purification?",
+    options: ["Sandalwood", "Neem (Azadirachta indica)", "Cardamom", "Licorice"],
+    answerIndex: 1,
+    explanation: "Neem possesses cooling (Sheeta) Virya and bitter (Tikta) Rasa, acting as a premier Raktashodhaka (blood purifier) for inflammatory Pitta skin conditions."
+  },
+  {
+    id: 8,
+    question: "Which climbing shrub is known in Sanskrit as “Amrita” ('Nectar of Immortality') and used to alleviate chronic fevers?",
+    options: ["Giloy / Guduchi (Tinospora cordifolia)", "Fenugreek", "Coriander", "Cinnamon"],
+    answerIndex: 0,
+    explanation: "Guduchi is celebrated as Amrita because it protects cells from free radical damage, kindles Agni, and acts as a premier antipyretic (Jwarahara)."
+  },
+  {
+    id: 9,
+    question: "The bark of Terminalia arjuna is renowned in classical Ayurveda for its affinity to which vital organ?",
+    options: ["Kidneys", "Lungs", "Heart (Hridya)", "Gallbladder"],
+    answerIndex: 2,
+    explanation: "Arjuna bark is the preeminent 'Hridya' (cardiotonic) herb in Ayurveda, traditionally prepared with milk (Arjuna Ksheerapaka) to strengthen cardiac muscle."
+  },
+  {
+    id: 10,
+    question: "Which adaptogenic root herb, translating to “She Who Possesses a Hundred Husbands”, is revered for female vitality and hormonal harmony?",
+    options: ["Shatavari (Asparagus racemosus)", "Turmeric", "Nutmeg", "Guggulu"],
+    answerIndex: 0,
+    explanation: "Shatavari is the premier female reproductive Rasayana, celebrated for cooling Pitta, nourishing Ojas, and supporting hormonal balance across life stages."
+  },
+  {
+    id: 11,
+    question: "In Ayurvedic philosophy, what does the fundamental concept of “Agni” refer to?",
+    options: ["Body Temperature", "Digestive and Metabolic Fire", "Blood Pressure", "Physical Muscle Strength"],
+    answerIndex: 1,
+    explanation: "Agni is the biological fire responsible for digestion, absorption, and cellular transformation. When Agni is balanced (Sama Agni), vitality flourishes."
+  },
+  {
+    id: 12,
+    question: "Fresh Ginger (Adrak) and Black Pepper (Maricha) primarily exhibit which taste (Rasa) in Dravyaguna?",
+    options: ["Madhura (Sweet)", "Tikta (Bitter)", "Katu (Pungent)", "Kashaya (Astringent)"],
+    answerIndex: 2,
+    explanation: "Katu (pungent) rasa kindles digestive Agni, clears respiratory Kapha, and stimulates blood circulation."
+  },
+  {
+    id: 13,
+    question: "Which therapeutic action earned Bhringraj (Eclipta alba) the title “Keshya” in classical texts?",
+    options: ["Purifying the liver", "Strengthening and nourishing hair follicles", "Alleviating joint aches", "Improving eyesight"],
+    answerIndex: 1,
+    explanation: "Bhringraj is the sovereign herb for hair health (Keshya), cooling excess Pitta in the scalp to prevent premature graying and hair thinning."
+  },
+  {
+    id: 14,
+    question: "Which of the three Doshas is composed of Air and Ether elements, governing movement, breath, and nerve impulses?",
+    options: ["Vata Dosha", "Pitta Dosha", "Kapha Dosha", "Agni Dosha"],
+    answerIndex: 0,
+    explanation: "Vata is composed of Vayu (Air) and Akasha (Ether). It governs all bodily locomotion, circulation, elimination, and neurological transmissions."
+  },
+  {
+    id: 15,
+    question: "Why does classical Ayurveda prescribe pairing Turmeric with Black Pepper (Maricha) and ghee/milk?",
+    options: ["To improve shelf life", "Piperine and lipids dramatically enhance Curcumin absorption", "To sweeten the blend", "To alter the yellow color"],
+    answerIndex: 1,
+    explanation: "Piperine in black pepper enhances curcumin bioavailability by up to 2000%, while lipids in ghee act as a fat-soluble carrier (Anupana)."
+  },
+  {
+    id: 16,
+    question: "Amalaki (Phyllanthus emblica) is celebrated as the richest whole-food botanical source of which nutrient?",
+    options: ["Vitamin D", "Vitamin C (Ascorbic Acid)", "Vitamin B12", "Calcium Carbonate"],
+    answerIndex: 1,
+    explanation: "Amla is an extraordinary natural source of bioavailable Vitamin C and heat-stable polyphenols, remaining potent even after drying or cooking."
+  },
+  {
+    id: 17,
+    question: "In classical Ayurvedic pharmacology (Dravyaguna), what does “Virya” refer to?",
+    options: ["The taste on the tongue", "The energetic heating (Ushna) or cooling (Sheeta) potency", "The shelf life of the root", "The geographical elevation of the plant"],
+    answerIndex: 1,
+    explanation: "Virya represents the active energetic potency of a substance, predominantly categorized as Ushna (heating) or Sheeta (cooling)."
+  },
+  {
+    id: 18,
+    question: "Which medicinal vine is named “Gurmar” ('Destroyer of Sugar') for its property of suppressing the taste of sweetness?",
+    options: ["Gymnema sylvestre", "Licorice", "Peppermint", "Stevia"],
+    answerIndex: 0,
+    explanation: "Chewing fresh leaves of Gymnema sylvestre temporarily paralyzes sweet taste receptors, traditionally used to support healthy blood sugar."
+  },
+  {
+    id: 19,
+    question: "What classical Ayurvedic morning oral hygiene practice involves swishing warm sesame or coconut oil in the mouth?",
+    options: ["Gandusha / Kavala", "Nasya", "Abhyanga", "Neti"],
+    answerIndex: 0,
+    explanation: "Gandusha (oil pulling) strengthens gums, prevents dental caries, pulls oral toxins, and clears dullness from the vocal cords and jaw."
+  },
+  {
+    id: 20,
+    question: "The fragrant purified gum resin “Guggulu” (Commiphora mukul) is famously utilized in Ayurveda for which wellness benefit?",
+    options: ["Joint mobility, anti-inflammation, and scraping metabolic lipid accumulation (Meda)", "Inducing sudden sleep", "Cooling eye drops", "Rapid weight gain"],
+    answerIndex: 0,
+    explanation: "Guggulu possesses deep 'Lekhana' (scraping) action, clearing accumulated Ama, promoting joint mobility, and balancing blood lipids."
   }
 ];
 
@@ -993,6 +1414,17 @@ export function fallbackIdentifyPlant(imageFile, hint = '') {
 // BACKEND FLASK REST API HELPERS WITH HIGH-RESILIENCE CLIENT FALLBACKS
 // ============================================================================
 
+export function getPlantImageUrl(plant) {
+  if (!plant) return '/assets/botanical_canvas.jpg';
+  if (plant.image_url && !plant.image_url.includes('herbal-wellness.jpg') && !plant.image_url.includes('logo')) {
+    return plant.image_url;
+  }
+  const slug = plant.slug || '';
+  const cleanSlug = slug.toLowerCase().replace(/[\s_\-]+/g, '-');
+  const noDash = slug.toLowerCase().replace(/[\s_\-]+/g, '');
+  return plantImages[slug] || plantImages[cleanSlug] || plantImages[noDash] || `/assets/${cleanSlug}.jpg`;
+}
+
 export async function fetchPlants(category = 'All', search = '') {
   const available = await isBackendAvailable();
   if (available) {
@@ -1005,11 +1437,31 @@ export async function fetchPlants(category = 'All', search = '') {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          return data;
+          return data.map(p => ({ ...p, image_url: p.image_url || getPlantImageUrl(p) }));
         }
       }
     } catch (err) {
       console.warn('Backend /plants unavailable, using canonical catalog:', err);
+    }
+  }
+
+  // Supabase direct fallback if backend Flask is not running
+  if (supabase) {
+    try {
+      let query = supabase.from('plants').select('*').order('id', { ascending: true });
+      if (category && category !== 'All') {
+        query = query.eq('category', category);
+      }
+      if (search) {
+        const q = search.trim();
+        query = query.or(`common_name.ilike.%${q}%,scientific_name.ilike.%${q}%,ayurvedic_name.ilike.%${q}%,slug.ilike.%${q}%`);
+      }
+      const { data, error } = await query;
+      if (!error && Array.isArray(data) && data.length > 0) {
+        return data.map(p => ({ ...p, image_url: p.image_url || getPlantImageUrl(p) }));
+      }
+    } catch (sbErr) {
+      console.warn('Direct Supabase plants query failed, falling back to static list:', sbErr);
     }
   }
 
@@ -1026,7 +1478,7 @@ export async function fetchPlants(category = 'All', search = '') {
       p.slug.toLowerCase().includes(q)
     );
   }
-  return filtered;
+  return filtered.map(p => ({ ...p, image_url: p.image_url || getPlantImageUrl(p) }));
 }
 
 export async function fetchPlantDetails(slugOrId) {
@@ -1041,6 +1493,25 @@ export async function fetchPlantDetails(slugOrId) {
       console.warn('Backend /plants/:id unavailable, using canonical catalog:', err);
     }
   }
+
+  // Supabase direct fallback if backend Flask is not running
+  if (supabase) {
+    try {
+      let query = supabase.from('plants').select('*');
+      if (typeof slugOrId === 'number' || (!isNaN(Number(slugOrId)) && !isNaN(parseFloat(slugOrId)))) {
+        query = query.or(`id.eq.${slugOrId},slug.eq.${slugOrId}`);
+      } else {
+        query = query.eq('slug', slugOrId);
+      }
+      const { data, error } = await query.single();
+      if (!error && data) {
+        return data;
+      }
+    } catch (sbErr) {
+      console.warn('Direct Supabase plant details query failed:', sbErr);
+    }
+  }
+
   const match = FALLBACK_PLANTS.find(p => p.slug === slugOrId || p.id === slugOrId);
   if (match) return match;
   throw new Error('Plant not found in Herbora database');
@@ -1632,36 +2103,300 @@ export async function sendBotChat(message) {
         body: JSON.stringify({ message })
       });
       if (res.ok) {
-        return await res.json();
+        const json = await res.json();
+        if (json && json.reply && !json.error) {
+          return json;
+        }
       }
     } catch (err) {
       console.warn("Backend /chat unavailable, using client botanical engine:", err);
     }
   }
 
-  // Graceful client botanical reasoning
-  const msgLower = (message || '').toLowerCase();
-  
-  for (const item of FALLBACK_BOT_KNOWLEDGE) {
-    if (item.keywords.some(k => msgLower.includes(k))) {
-      return { reply: item.response };
-    }
+  // Resilient client-side botanical reasoning with direct database resolution
+  return await generateClientBotanicalReply(message);
+}
+
+export async function generateClientBotanicalReply(message) {
+  if (!message || !message.trim()) {
+    return {
+      reply: "Namaste! I am your Herbora Botanical Assistant. Ask me about any Ayurvedic plant (like Tulsi, Ashwagandha, Neem, or Giloy), traditional remedies for sleep, digestion, or skin care, or growing herbs at home."
+    };
   }
 
-  for (const plant of FALLBACK_PLANTS) {
-    if (
-      msgLower.includes(plant.slug) || 
-      msgLower.includes(plant.common_name.toLowerCase()) || 
-      msgLower.includes(plant.ayurvedic_name.toLowerCase())
-    ) {
+  const raw = message.trim();
+  const lower = raw.toLowerCase();
+
+  // 1. Check Hindi Language
+  const isHindiQuery = /[\u0900-\u097F]/.test(raw) || 
+    lower.includes('kaise') || lower.includes('upayog') || lower.includes('fayde') || lower.includes('nuskhe') || lower.includes('upay');
+
+  // 2. Specific Classic Herb Knowledge (Deep answers for famous herbs)
+  if (lower.includes('tulsi') || lower.includes('holy basil') || raw.includes('तुलसी')) {
+    if (isHindiQuery) {
       return {
-        reply: `${plant.common_name} (${plant.scientific_name}), known in classical Ayurveda as ${plant.ayurvedic_name}, belongs to the ${plant.category} category. ${plant.description} Traditional uses: ${plant.traditional_uses}`
+        reply: "🌿 **तुलसी (Ocimum sanctum / पवित्र तुलसी)**\n\n" +
+          "• **प्रमुख उपयोग व लाभ**:\n" +
+          "- **श्वसन तंत्र एवं कफ-खांसी**: छाती में जमे बलगम को निकालकर सांस नलियों को साफ करती है।\n" +
+          "- **रोग प्रतिरोधक क्षमता (Immunity)**: इसमें मौजूद यूजेनॉल व एंटीऑक्सीडेंट मौसमी संक्रमण से रक्षा करते हैं।\n" +
+          "- **तनावमुक्ति (Adaptogen)**: कोर्टिसोल को नियंत्रित कर मानसिक एकाग्रता और ऊर्जा को बढ़ाती है।\n\n" +
+          "• **सेवन विधि**:\n" +
+          "- **काढ़ा/हर्बल टी**: 5-7 ताजी पत्तियां, कुटी हुई अदरक व 2 काली मिर्च को 1 कप पानी में 5 मिनट उबालें। गुनगुना होने पर शहद मिलाकर पिएं।\n" +
+          "- **प्रातः काल**: सुबह खाली पेट 3-4 धुली पत्तियां चबाना या निगलना त्रिदोष को शांत करता है।\n\n" +
+          "• **आयुर्वेदिक गुण**: रस - कटु, तिक्त | वीर्य - उष्ण (गर्म) | कफ व वात शामक।"
       };
     }
+    return {
+      reply: "🌿 **Tulsi (Holy Basil / *Ocimum sanctum*)** — Revered in classical Ayurveda as *Surasa* ('The Incomparable One').\n\n" +
+        "• **Traditional Uses & Health Benefits**:\n" +
+        "- **Respiratory Health**: Highly effective for relieving coughs, colds, chest congestion, and excess Kapha mucus.\n" +
+        "- **Immune Shield**: Rich in eugenol, rosmarinic acid, and bioflavonoids that protect against seasonal pathogens.\n" +
+        "- **Adaptogenic Stress Relief**: Calms cortisol surges, clears mental fog, and supports calm vitality.\n" +
+        "- **Digestive Fire (Deepana)**: Kindles healthy appetite and eases stomach cramps without overheating.\n\n" +
+        "• **How to Prepare & Consume**:\n" +
+        "- **Immunity Infusion**: Steep 5–7 crushed fresh leaves with a thin slice of fresh ginger and a pinch of black pepper in boiling water for 5 minutes. Strain and stir in raw honey once lukewarm.\n" +
+        "- **Morning Ritual**: Chew 3–4 washed leaves on an empty stomach to harmonize Vata and Kapha doshas.\n\n" +
+        "• **Ayurvedic Energetics (Dravyaguna)**:\n" +
+        "- **Rasa (Taste)**: Pungent (Katu), Bitter (Tikta)\n" +
+        "- **Virya (Potency)**: Warm (Ushna)\n" +
+        "- **Dosha Action**: Pacifies Kapha and Vata; use moderately if Pitta is strongly elevated."
+    };
   }
 
+  if (lower.includes('ashwagandha') || lower.includes('withania') || lower.includes('indian ginseng') || raw.includes('अश्वगंधा')) {
+    if (isHindiQuery) {
+      return {
+        reply: "🌿 **अश्वगंधा (Withania somnifera)**\n\n" +
+          "• **प्रमुख लाभ**:\n" +
+          "- **गहरी नींद और तनावमुक्ति**: कोर्टिसोल स्तर को घटाकर अनिद्रा और चिंता को दूर करता है।\n" +
+          "- **शारीरिक बल व ओज वृद्धि**: इसे सर्वश्रेष्ठ रसायन (Rasayana) माना गया है जो मांसपेशियों और नसों को पोषण देता है।\n\n" +
+          "• **सेवन विधि**: 1/2 चम्मच अश्वगंधा चूर्ण को रात में सोने से 45 मिनट पूर्व गुनगुने दूध में चुटकी भर जायफल और शहद/घी के साथ लें।"
+      };
+    }
+    return {
+      reply: "🌿 **Ashwagandha (Indian Ginseng / *Withania somnifera*)** — Premier Rasayana (rejuvenator) of Ayurveda.\n\n" +
+        "• **Traditional Uses & Benefits**:\n" +
+        "- **Restful Sleep & Anxiety Relief**: Calms hyperactive Vata in the nervous system (Majja Dhatu), lowering cortisol and easing insomnia.\n" +
+        "- **Physical Stamina & Muscle Tone**: Nourishes Mamsa (muscle) and Shukra (vital reproductive) tissues.\n" +
+        "- **Adrenal & Thyroid Balance**: Restores energy reserves depleted by chronic stress without causing jitteriness.\n\n" +
+        "• **How to Take**:\n" +
+        "- Mix 1/2 tsp organic root powder into a cup of warm cow's milk (or oat milk) with a tiny pinch of nutmeg and cardamom. Drink 30–45 minutes before sleep.\n\n" +
+        "• **Energetics**: Virya: Warm (Ushna) | Vipaka: Sweet (Madhura) | Balances Vata & Kapha."
+    };
+  }
+
+  if (lower.includes('neem') || lower.includes('nimba') || raw.includes('नीम')) {
+    return {
+      reply: "🌿 **Neem (Indian Lilac / *Azadirachta indica*)** — Classical *Arishta* ('Reliever of Sickness').\n\n" +
+        "• **Traditional Uses & Benefits**:\n" +
+        "- **Skin Health & Acne**: Unrivaled blood purifier (Raktashodhaka) that clears inflammatory Pitta blemishes, cystic acne, and eczema.\n" +
+        "- **Oral & Dental Health**: Traditional twigs (Datun) or bark decoctions eliminate oral bacteria and strengthen gums.\n" +
+        "- **Detox & Liver Care**: Cools excess heat in the liver and spleen while supporting clear lymphatic flow.\n\n" +
+        "• **How to Use**:\n" +
+        "- **Topical**: Make a soothing paste of neem leaf powder and rose water (or turmeric) for blemish spots.\n" +
+        "- **Internal**: 1–2 fresh tender leaves or 1/4 tsp powder with lukewarm water in the morning during seasonal shifts (Ritu Sandhi).\n\n" +
+        "• **Energetics**: Rasa: Bitter (Tikta) | Virya: Cooling (Sheeta) | Pacifies Pitta and Kapha."
+    };
+  }
+
+  if (lower.includes('turmeric') || lower.includes('haldi') || lower.includes('haridra') || lower.includes('curcumin') || raw.includes('हल्दी')) {
+    return {
+      reply: "🌿 **Turmeric (Haridra / *Curcuma longa*)** — The Golden Healer of Ayurveda.\n\n" +
+        "• **Traditional Uses & Benefits**:\n" +
+        "- **Anti-Inflammatory & Joints**: Soothes swelling, stiffness, and joint aches naturally.\n" +
+        "- **Skin Radiance**: Enhances dermal microcirculation (Varnya) and speeds wound healing.\n" +
+        "- **Digestion & Immunity**: Stimulates healthy bile flow and fortifies the gut barrier.\n\n" +
+        "• **Optimal Consumption Method**:\n" +
+        "- **Golden Milk (Haldi Doodh)**: Simmer 1/2 tsp pure turmeric powder in 1 cup warm milk with a pinch of black pepper (piperine enhances curcumin absorption by 2000%) and 1/2 tsp ghee.\n\n" +
+        "• **Energetics**: Pungent, Bitter | Virya: Heating (Ushna) | Balances all three Doshas (Tridoshic in moderation)."
+    };
+  }
+
+  if (lower.includes('giloy') || lower.includes('guduchi') || lower.includes('amrita') || raw.includes('गिलोय')) {
+    return {
+      reply: "🌿 **Giloy (Guduchi / *Tinospora cordifolia*)** — Revered as *Amrita* ('The Nectar of Immortality').\n\n" +
+        "• **Traditional Uses & Benefits**:\n" +
+        "- **Master Antipyretic (Jwarahara)**: Renowned for breaking chronic low-grade fevers, viral infections, and seasonal allergies.\n" +
+        "- **Immunomodulator**: Stimulates macrophage activity and rebuilds depleted white blood cells.\n" +
+        "- **Liver & Blood Detox**: Flushes metabolic endotoxins (Ama) from the blood and joints.\n\n" +
+        "• **How to Take**: 15–20 ml fresh Giloy juice diluted in equal water on an empty stomach, or 1/2 tsp powder in warm water.\n\n" +
+        "• **Energetics**: A rare herb that is Bitter/Astringent yet possesses Heating virya and Sweet vipaka — balancing all three Doshas."
+    };
+  }
+
+  if (lower.includes('brahmi') || lower.includes('bacopa') || lower.includes('gotu kola') || raw.includes('ब्राह्मी')) {
+    return {
+      reply: "🌿 **Brahmi (Water Hyssop / *Bacopa monnieri*)** — The Supreme *Medhya Rasayana* (Cognitive Rejuvenator).\n\n" +
+        "• **Traditional Uses & Benefits**:\n" +
+        "- **Memory & Focus (Dhi, Dhriti, Smriti)**: Nourishes neural synapses, enhancing retention, comprehension, and recall.\n" +
+        "- **Nervous Exhaustion**: Alleviates mental fatigue, examination stress, and racing evening thoughts.\n" +
+        "- **Emotional Balance**: Cools Sadhaka Pitta (the subdosha governing heart emotions and intellect).\n\n" +
+        "• **How to Take**: 1/2 tsp Brahmi powder infused in warm water or taken with 1/2 tsp pure cow's ghee in the morning."
+    };
+  }
+
+  if (lower.includes('triphala') || raw.includes('त्रिफला')) {
+    return {
+      reply: "🌿 **Triphala ('The Three Fruits')** — A revered classical synergy of Amalaki, Haritaki, and Bibhitaki.\n\n" +
+        "• **Key Benefits**:\n" +
+        "- **Gentle Colon Cleansing**: Regulates peristalsis and eliminates Ama (toxins) without habit-forming dependency.\n" +
+        "- **Digestive Tonic**: Tones the mucosal lining of the intestines and supports beneficial gut flora.\n" +
+        "- **Ocular & Hair Health (Chakshushya)**: Traditionally used to brighten vision and tone the scalp.\n\n" +
+        "• **How to Take**: Mix 1/2 to 1 teaspoon in a cup of warm water 30 minutes before bed."
+    };
+  }
+
+  if (lower.includes('amla') || lower.includes('amalaki') || raw.includes('आंवला')) {
+    return {
+      reply: "🌿 **Amla (Amalaki / Indian Gooseberry / *Phyllanthus emblica*)**\n\n" +
+        "• **Key Benefits**:\n" +
+        "- The richest botanical whole-food source of Vitamin C, with potent anti-aging and free-radical scavenging properties.\n" +
+        "- Promotes hair growth, darkens premature graying, and protects the stomach mucosal lining.\n" +
+        "• **How to Take**: 15–20 ml pure Amla juice in the morning or 1 tsp Chyawanprash."
+    };
+  }
+
+  if (lower.includes('shatavari') || raw.includes('शतावरी')) {
+    return {
+      reply: "🌿 **Shatavari (*Asparagus racemosus*)** — 'She Who Possesses a Hundred Husbands'.\n\n" +
+        "• **Key Benefits**:\n" +
+        "- Paramount female reproductive Rasayana, balancing estrogen, menstrual cycles, and postpartum vitality.\n" +
+        "- Cooling demulcent that soothes hyperacidity, ulcers, and inflamed mucous membranes.\n" +
+        "• **How to Take**: 1/2 tsp root powder in warm milk with honey or ghee."
+    };
+  }
+
+  if (lower.includes('ginger') || lower.includes('adrak') || lower.includes('shunthi') || raw.includes('अदरक')) {
+    return {
+      reply: "🌿 **Ginger (Shunthi / Adrak / *Zingiber officinale*)** — Classical *Vishwabhesaj* ('The Universal Medicine').\n\n" +
+        "• **Key Benefits**: Kindles digestive fire (Agni), relieves gas, nausea, and motion sickness, and breaks up respiratory mucus.\n" +
+        "• **How to Take**: Fresh ginger slice with a sprinkle of rock salt and lemon drops 10 minutes before meals."
+    };
+  }
+
+  // 3. Health Conditions & Ayurvedic Remedy Categories
+  if (lower.includes('sleep') || lower.includes('insomnia') || lower.includes('restless') || raw.includes('नींद')) {
+    return {
+      reply: "🌙 **Ayurvedic Protocol for Restorative Sleep (Nidra)**:\n\n" +
+        "1. **Golden Moon Milk**: Warm milk (cow or oat) + 1/2 tsp Ashwagandha + pinch of grated nutmeg + cardamom 45 minutes before bed.\n" +
+        "2. **Pada Abhyanga**: Massage the soles of your feet with warm sesame oil or Brahmi oil before sleeping to ground restless Vata energy.\n" +
+        "3. **Digital Sunset**: Power down screens 1 hour before sleep to allow natural melatonin synthesis."
+    };
+  }
+
+  if (lower.includes('digestion') || lower.includes('bloat') || lower.includes('gas') || lower.includes('acidity') || lower.includes('constipat') || raw.includes('पाचन')) {
+    return {
+      reply: "🍲 **Ayurvedic Digestive Protocol (Agni Deepana)**:\n\n" +
+        "1. **Kindle Agni**: Chew a thin coin of fresh ginger with Himalayan pink salt 10 minutes before lunch.\n" +
+        "2. **CCF Tea**: Boil equal parts Cumin, Coriander, and Fennel seeds in water and sip warm throughout the afternoon.\n" +
+        "3. **Evening Elimination**: 1/2 tsp Triphala powder with warm water at bedtime.\n" +
+        "4. **Rule of Thumb**: Avoid iced cold beverages with meals, as they extinguish digestive enzymes."
+    };
+  }
+
+  if (lower.includes('skin') || lower.includes('acne') || lower.includes('glow') || lower.includes('complexion') || raw.includes('त्वचा')) {
+    return {
+      reply: "✨ **Ayurvedic Clear & Glowing Skin Protocol (Varnya)**:\n\n" +
+        "1. **Blood Purification (Internal)**: Neem and Turmeric or Manjistha tea to cool inflammatory Pitta.\n" +
+        "2. **Herbal Lepa (External Face Mask)**: Sandalwood powder + Kasturi Manjal (wild turmeric) + pure Rose Water. Apply for 15 minutes.\n" +
+        "3. **Hydration**: Drink copper-infused water in the morning and favor sweet juicy fruits like pomegranates and melons."
+    };
+  }
+
+  if (lower.includes('hair') || lower.includes('dandruff') || lower.includes('fall') || raw.includes('बाल')) {
+    return {
+      reply: "💆 **Ayurvedic Hair Vitality Protocol (Keshya)**:\n\n" +
+        "1. **Shiro Abhyanga**: Warm scalp massage twice weekly with authentic Bhringraj Taila or Amla oil.\n" +
+        "2. **Internal Nourishment**: Take 1 tsp Amla powder or Chyawanprash in the morning to nourish Asthi (bone) and hair follicles.\n" +
+        "3. **Natural Wash**: Rinse hair with soaked Shikakai and Reetha decoction instead of sulfate shampoos."
+    };
+  }
+
+  if (lower.includes('cough') || lower.includes('cold') || lower.includes('throat') || lower.includes('mucus') || lower.includes('fever') || raw.includes('खांसी')) {
+    return {
+      reply: "🍵 **Ayurvedic Respiratory Protocol (Kasa-Shwasa)**:\n\n" +
+        "1. **Tulsi-Ginger Kadha**: Boil 7 Tulsi leaves, 1 inch crushed ginger, 3 crushed black peppers, and 1 crushed clove in 1.5 cups water until reduced to 1 cup. Add honey once lukewarm.\n" +
+        "2. **Throat Soother**: Chew a small stick of Mulethi (Licorice) or keep a clove in the mouth to ease tickling cough.\n" +
+        "3. **Steam Inhalation**: Inhale steam infused with a pinch of crushed Ajwain (carom seeds) to open sinus pathways."
+    };
+  }
+
+  if (lower.includes('joint') || lower.includes('arthritis') || lower.includes('pain') || raw.includes('दर्द')) {
+    return {
+      reply: "🦴 **Ayurvedic Joint & Inflammation Protocol (Sandhivata)**:\n\n" +
+        "1. **Internal Anti-Inflammatory**: Shallaki (Boswellia serrata) and Turmeric milk with black pepper.\n" +
+        "2. **External Warmth**: Gently massage painful joints with warm Mahanarayan Oil or Castor Oil, followed by a warm compress.\n" +
+        "3. **Diet**: Avoid dry, cold, leftover foods that aggravate Vata dosha."
+    };
+  }
+
+  if (lower.includes('garden') || lower.includes('grow') || lower.includes('water') || lower.includes('balcony') || raw.includes('पौधा')) {
+    return {
+      reply: "🌱 **Home Herbal Garden Quick Guide**:\n\n" +
+        "• **Tulsi**: Needs 4–6 hours of direct sunlight. Water lightly when top 1 inch of soil is dry. Pinch flower tips (Manjari) to encourage bushy leaves.\n" +
+        "• **Mint (Pudina)**: Prefers morning sun and consistently moist, well-draining soil.\n" +
+        "• **Aloe Vera**: Needs bright indirect light and infrequent watering (every 7–10 days). Use sandy succulent soil."
+    };
+  }
+
+  // 4. Dynamic Lookup across FALLBACK_PLANTS & Supabase 361 plants!
+  let matchedPlant = null;
+  for (const plant of (FALLBACK_PLANTS || [])) {
+    const cName = (plant.common_name || '').toLowerCase();
+    const sName = (plant.scientific_name || '').toLowerCase();
+    const aName = (plant.ayurvedic_name || '').toLowerCase();
+    const slug = (plant.slug || '').toLowerCase();
+    if (lower.includes(slug) || lower.includes(cName) || (aName && lower.includes(aName))) {
+      matchedPlant = plant;
+      break;
+    }
+  }
+
+  if (!matchedPlant && supabase) {
+    try {
+      const cleanTokens = lower.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3);
+      for (const token of cleanTokens) {
+        if (['what', 'how', 'use', 'take', 'plant', 'herb', 'tell', 'about', 'benefits', 'with', 'help', 'cure', 'does', 'good'].includes(token)) continue;
+        const { data } = await supabase.from('plants').select('*')
+          .or(`common_name.ilike.%${token}%,scientific_name.ilike.%${token}%,ayurvedic_name.ilike.%${token}%,slug.ilike.%${token}%`)
+          .limit(1);
+        if (data && data.length > 0) {
+          matchedPlant = data[0];
+          break;
+        }
+      }
+    } catch {
+      // Supabase lookup fail safe
+    }
+  }
+
+  if (matchedPlant) {
+    const uses = matchedPlant.traditional_uses || matchedPlant.description || "Revered in classical Ayurveda for promoting holistic balance.";
+    const parts = matchedPlant.plant_parts_used ? `• **Parts Used**: ${matchedPlant.plant_parts_used}\n` : '';
+    const virya = matchedPlant.virya ? `• **Virya (Potency)**: ${matchedPlant.virya}\n` : '';
+    const vipaka = matchedPlant.vipaka ? `• **Vipaka (Post-Digestive Effect)**: ${matchedPlant.vipaka}\n` : '';
+    const indications = Array.isArray(matchedPlant.main_indications) && matchedPlant.main_indications.length > 0
+      ? `• **Key Indications**: ${matchedPlant.main_indications.join(', ')}\n`
+      : '';
+    const dosha = matchedPlant.tridosha ? '• **Dosha Balance**: Tridoshic (Harmonizes Vata, Pitta, and Kapha)\n' : '';
+
+    return {
+      reply: `🌿 **${matchedPlant.common_name}** (*${matchedPlant.scientific_name}*)${matchedPlant.ayurvedic_name ? ` — Classical: **${matchedPlant.ayurvedic_name}**` : ''}\n\n` +
+        `**Category**: ${matchedPlant.category}\n\n` +
+        `**Botanical Overview**: ${matchedPlant.description}\n\n` +
+        `**Traditional Uses & Therapeutic Benefits**:\n${uses}\n\n` +
+        (virya || vipaka || dosha || parts || indications ? `**Ayurvedic Dravyaguna Energetics**:\n${virya}${vipaka}${dosha}${parts}${indications}\n` : '') +
+        `*Tip: In Ayurveda, herbs are traditionally matched with specific vehicles (Anupana) such as warm water, milk, or ghee for optimal cellular absorption.*`
+    };
+  }
+
+  // 5. Intelligent Conversational Fallback
   return {
-    reply: "Ayurveda honors the uniqueness of every herb and person. You can ask me about specific plants (such as Tulsi, Ashwagandha, Neem, or Turmeric), daily Dincharya routines, Agni digestion, or restful evening remedies."
+    reply: "In classical Ayurveda, every botanical entity carries a specific Rasa (taste), Virya (energy), and Vipaka (post-digestive effect) tailored to your unique Doshas (Vata, Pitta, and Kapha).\n\n" +
+      "You can ask me about:\n" +
+      "• **Specific Herbs**: Tulsi, Ashwagandha, Neem, Turmeric, Giloy, Brahmi, Shatavari, or Triphala\n" +
+      "• **Wellness Goals**: Restorative sleep, kindling digestive Agni, glowing skin, hair fall, or joint comfort\n" +
+      "• **Daily Living**: Morning Dincharya routines or growing medicinal herbs on your balcony"
   };
 }
 
@@ -2014,17 +2749,42 @@ export async function deletePostComment(commentId, userId) {
   return { success: true };
 }
 
-export async function submitUserFeedback(rating, message) {
+export async function submitUserFeedback(rating, message, userEmail = '', userName = '') {
   const available = await isBackendAvailable();
+  const payload = { 
+    rating, 
+    message, 
+    user_email: userEmail, 
+    user_name: userName 
+  };
+
   if (available) {
     try {
       const res = await fetch(`${API_BASE}/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating, message })
+        body: JSON.stringify(payload)
       });
       if (res.ok) return await res.json();
+    } catch (err) {
+      console.warn('Backend feedback endpoint unavailable:', err);
+    }
+  }
+
+  // Direct Supabase fallback
+  if (supabase) {
+    try {
+      const fullMsg = userEmail ? `[${userName || 'Herbora User'} <${userEmail}>]\n${message}` : message;
+      await supabase.from('user_feedback').insert([{
+        rating: Math.max(1, Math.min(5, rating)),
+        message: fullMsg
+      }]);
     } catch {}
   }
-  return { status: "success", message: "Feedback recorded successfully" };
+
+  return { 
+    status: "success", 
+    message: "Feedback recorded successfully", 
+    recipient: "rajsingh2007.rs@gmail.com" 
+  };
 }
