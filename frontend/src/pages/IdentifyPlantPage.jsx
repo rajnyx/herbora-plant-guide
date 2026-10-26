@@ -12,6 +12,7 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [activeHint, setActiveHint] = useState('');
+  const [selectedOrgan, setSelectedOrgan] = useState('auto');
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -79,7 +80,7 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
     setErrorMsg('');
 
     try {
-      const data = await identifyPlantImage(selectedFile, activeHint, currentUser?.id);
+      const data = await identifyPlantImage(selectedFile, activeHint, currentUser?.id, selectedOrgan);
       setResult(data);
     } catch (err) {
       setErrorMsg(err.message || 'Plant identification service encountered an error. Please try again.');
@@ -179,6 +180,31 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
                 )}
               </div>
 
+              {/* Organ Focus Selector */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#EAE6DC]">
+                <span className="text-xs font-semibold text-[#637869] mr-1">Organ:</span>
+                {[
+                  { id: 'auto', label: 'Auto' },
+                  { id: 'leaf', label: 'Leaf' },
+                  { id: 'flower', label: 'Flower' },
+                  { id: 'fruit', label: 'Fruit' },
+                  { id: 'bark', label: 'Stem / Bark' }
+                ].map((org) => (
+                  <button
+                    key={org.id}
+                    type="button"
+                    onClick={() => setSelectedOrgan(org.id)}
+                    className={`text-xs px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer ${
+                      selectedOrgan === org.id
+                        ? 'bg-[#174B2B] text-white shadow-2xs font-bold'
+                        : 'bg-[#EDE6D5] text-[#2D3E33] hover:bg-[#E2DDD0]'
+                    }`}
+                  >
+                    {org.label}
+                  </button>
+                ))}
+              </div>
+
               {/* Control Buttons */}
               <div className="flex items-center justify-between pt-1">
                 <div className="flex items-center gap-2">
@@ -274,12 +300,26 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-widest text-[#285D36] flex items-center gap-1.5">
                   <CheckCircle className="w-4 h-4 text-[#8DA56B]" />
-                  {result.source === 'plantnet_api' ? 'Pl@ntNet AI Verified' : 'Botanical Sample Match'}
+                  {result.source === 'plantnet_api' 
+                    ? 'Pl@ntNet AI Verified' 
+                    : result.source === 'sample_preset' 
+                    ? 'Botanical Sample Match' 
+                    : 'AI Botanical Vision Match'}
                 </span>
                 <span className="text-xs px-2.5 py-1 rounded-full bg-[#DDE5C9] text-[#174B2B] font-bold">
                   {result.confidence_score}% Match
                 </span>
               </div>
+
+              {result.is_heuristic_estimation && (
+                <div className="p-3 rounded-xl bg-[#FEF9E7] border border-[#FAD7A0] text-[#7D6608] text-xs leading-relaxed flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 text-[#B7950B] shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold block text-[#7D6608] mb-0.5">Ayurvedic Botanical Estimation</span>
+                    <span>Herbora analyzed color density and leaf markers. For 90%+ taxonomic verification, you can also upload a close-up of a single leaf or flower.</span>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <h2 className="font-serif text-3xl font-bold text-[#174B2B]">
