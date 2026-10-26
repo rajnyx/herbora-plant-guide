@@ -8,7 +8,8 @@
     "build": "npm --prefix frontend run build && node -e \"const fs = require('fs'); fs.cpSync('frontend/dist', 'dist', { recursive: true });\"",
     "preview": "npm --prefix frontend run preview",
     "frontend": "npm --prefix frontend run dev",
-    "backend": "cd backend && python app.py"
+    "backend": "cd backend && python app.py",
+    "postinstall": "node -e \"const fs = require('fs'); if (!fs.existsSync('node_modules') && fs.existsSync('frontend/node_modules')) { try { fs.symlinkSync('frontend/node_modules', 'node_modules', 'junction'); } catch(e){} }\""
   },
   "keywords": ["ayurveda", "botanical", "herbora", "medicinal-plants"],
   "author": "",

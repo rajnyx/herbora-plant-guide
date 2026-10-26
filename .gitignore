@@ -66,3 +66,6 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Legacy exports
+herbora-plant-guide/
