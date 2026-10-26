@@ -21,6 +21,7 @@ ENV/
 
 # Local database files
 *.db
+*.bak
 *.sqlite
 *.sqlite3
 backend/herbora.db
