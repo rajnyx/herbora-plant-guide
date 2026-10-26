@@ -65,24 +65,50 @@ export default function PlantopediaPage({
       const commonName = (p.common_name || '').toLowerCase();
       const sciName = (p.scientific_name || '').toLowerCase();
       const ayurName = (p.ayurvedic_name || '').toLowerCase();
+      const engName = (p.english_name || '').toLowerCase();
       const slug = (p.slug || '').toLowerCase();
       const cat = (p.category || '').toLowerCase();
       const desc = (p.description || '').toLowerCase();
       const uses = (p.traditional_uses || '').toLowerCase();
+      const virya = (p.virya || '').toLowerCase();
+      const vipaka = (p.vipaka || '').toLowerCase();
 
       const regionalMatch = Array.isArray(p.regional_names)
         ? p.regional_names.some((rn) => typeof rn === 'string' && rn.toLowerCase().includes(q))
+        : false;
+
+      const synonymsMatch = Array.isArray(p.sanskrit_synonyms)
+        ? p.sanskrit_synonyms.some((sn) => typeof sn === 'string' && sn.toLowerCase().includes(q))
+        : false;
+
+      const indicationsMatch = Array.isArray(p.main_indications)
+        ? p.main_indications.some((ind) => typeof ind === 'string' && ind.toLowerCase().includes(q))
+        : false;
+
+      const rasaMatch = Array.isArray(p.rasa)
+        ? p.rasa.some((r) => typeof r === 'string' && r.toLowerCase().includes(q))
+        : false;
+
+      const prabhavMatch = Array.isArray(p.prabhav)
+        ? p.prabhav.some((pr) => typeof pr === 'string' && pr.toLowerCase().includes(q))
         : false;
 
       return (
         commonName.includes(q) ||
         sciName.includes(q) ||
         ayurName.includes(q) ||
+        engName.includes(q) ||
         slug.includes(q) ||
         cat.includes(q) ||
         desc.includes(q) ||
         uses.includes(q) ||
-        regionalMatch
+        virya.includes(q) ||
+        vipaka.includes(q) ||
+        regionalMatch ||
+        synonymsMatch ||
+        indicationsMatch ||
+        rasaMatch ||
+        prabhavMatch
       );
     });
   }, [plants, category, search, isHindi, localizePlant, localizeCategory]);
@@ -255,10 +281,31 @@ export default function PlantopediaPage({
                   <p className="text-xs text-[#1F3D29] line-clamp-3 leading-relaxed mt-2.5">
                     {plant.description}
                   </p>
+
+                  {/* Dravyaguna Quick Tags */}
+                  {(plant.virya || plant.tridosha || (plant.rasa && plant.rasa.length > 0)) && (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2 border-t border-[#DDD6C3]/40">
+                      {plant.tridosha ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E2ECD5] text-[#113E21] font-semibold border border-[#8DA56B]/60">
+                          Tridoshic
+                        </span>
+                      ) : null}
+                      {plant.virya && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF6EE] text-[#285D36] font-medium border border-[#DDD6C3]">
+                          Virya: {plant.virya}
+                        </span>
+                      )}
+                      {plant.rasa && plant.rasa.length > 0 && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF6EE] text-[#43634E] border border-[#DDD6C3]">
+                          {plant.rasa.slice(0, 2).join(', ')}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Bottom CTA */}
-                <div className="pt-5 mt-4 border-t border-[#DDD6C3]/60 flex items-center justify-between">
+                <div className="pt-4 mt-3 border-t border-[#DDD6C3]/60 flex items-center justify-between">
                   <button
                     onClick={() => onSelectPlant(plant)}
                     className="herbora-btn-primary text-xs py-2 px-3.5 cursor-pointer flex items-center gap-1.5"
@@ -275,6 +322,40 @@ export default function PlantopediaPage({
           })}
         </div>
       )}
+
+      {/* Dataset Attribution Footer (CC BY 4.0) */}
+      <div className="mt-12 pt-6 border-t border-[#DDD6C3] text-center text-xs text-[#556B5D] leading-relaxed">
+        <p>
+          <span>Botanical & Ayurvedic pharmacological metadata sourced from </span>
+          <a
+            href="https://www.amidhaayurveda.com/p/herb-database.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline font-semibold text-[#174B2B] hover:text-[#285D36]"
+          >
+            Amidha Ayurveda Herb Database v2.0
+          </a>
+          <span> by Sparsh Varshney (Licensed under </span>
+          <a
+            href="https://creativecommons.org/licenses/by/4.0/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline font-semibold text-[#174B2B] hover:text-[#285D36]"
+          >
+            CC BY 4.0
+          </a>
+          <span>, DOI: </span>
+          <a
+            href="https://doi.org/10.5281/zenodo.17475351"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline font-semibold text-[#174B2B] hover:text-[#285D36]"
+          >
+            10.5281/zenodo.17475351
+          </a>
+          <span>).</span>
+        </p>
+      </div>
     </div>
   );
 }

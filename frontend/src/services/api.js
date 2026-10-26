@@ -228,7 +228,23 @@ export const FALLBACK_PLANTS = [
     cultivation_information: "Requires warm climate, well-draining soil, and 4-6 hours of sunlight. Water every 2 days.",
     safety_information: "Educational information only. May interact with blood-thinning medications and hypoglycemia agents. Avoid excessive therapeutic doses in pregnancy.",
     image_url: "/assets/tulsi.jpg",
-    is_published: true
+    is_published: true,
+    sanskrit_synonyms: ["Surasa", "Apetarakshasi", "Bhuteshta", "Gauri"],
+    part_used: ["Patra", "Pushpa", "Moola", "Bija"],
+    main_indications: ["Kasa", "Shwasa", "Jwara", "Hikka"],
+    pacify: ["Kapha", "Vata"],
+    aggravate: ["Pitta"],
+    tridosha: false,
+    rasa: ["Katu", "Tikta"],
+    guna: ["Laghu", "Ruksha"],
+    virya: "Ushna",
+    vipaka: "Katu",
+    prabhav: ["rasayan", "Krimighna", "Kasahara", "Shoolaghna"],
+    source_references: [
+      { title: "Charaka Samhita — Sutrasthana", url: "https://vedabase.io" },
+      { title: "Amidha Ayurveda — Tulsi Monograph", url: "https://www.amidhaayurveda.com/p/tulsi.html" },
+      { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
+    ]
   },
   {
     id: "plant-ashwagandha",
@@ -245,7 +261,23 @@ export const FALLBACK_PLANTS = [
     cultivation_information: "Drought-tolerant; thrives in loose sandy-loam soil and full sun with minimal watering.",
     safety_information: "Avoid during pregnancy. Can affect thyroid hormone levels. Consult a healthcare practitioner if taking sedative or immunosuppressant medication.",
     image_url: "/assets/ashwagandha.jpg",
-    is_published: true
+    is_published: true,
+    sanskrit_synonyms: ["Turagi", "Vajigandha", "Balada", "Kushtagandhini"],
+    part_used: ["Moola"],
+    main_indications: ["Kshaya", "Daurbalya", "Vata Vyadhi", "Klaibya"],
+    pacify: ["Vata", "Kapha"],
+    aggravate: ["Pitta"],
+    tridosha: false,
+    rasa: ["Tikta", "Kashaya"],
+    guna: ["Guru", "Snigdha"],
+    virya: "Ushna",
+    vipaka: "Madhura",
+    prabhav: ["Balya", "Medhya", "Vrishya", "rasayan"],
+    source_references: [
+      { title: "NCCIH — Ashwagandha Research Review", url: "https://www.nccih.nih.gov/health/ashwagandha" },
+      { title: "Amidha Ayurveda — Ashwagandha Monograph", url: "https://www.amidhaayurveda.com/p/ashwagandha.html" },
+      { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
+    ]
   },
   {
     id: "plant-neem",
@@ -262,7 +294,21 @@ export const FALLBACK_PLANTS = [
     cultivation_information: "Highly hardy evergreen tree; thrives in poor, rocky soils and requires deep, infrequent watering once established.",
     safety_information: "Not recommended internally for infants, young children, or during pregnancy or conception planning. Extremely bitter; use topically with care.",
     image_url: "/assets/neem.jpg",
-    is_published: true
+    is_published: true,
+    sanskrit_synonyms: ["Nimba", "Pichumarda", "Arishta", "Hinguniryasa"],
+    part_used: ["Patra", "Twak", "Bija", "Taila"],
+    main_indications: ["Kushta", "Prameha", "Krimi", "Jwara"],
+    pacify: ["Pitta", "Kapha"],
+    aggravate: ["Vata"],
+    tridosha: false,
+    rasa: ["Tikta", "Kashaya"],
+    guna: ["Laghu", "Ruksha"],
+    virya: "Sheeta",
+    vipaka: "Katu",
+    prabhav: ["Krimighna", "Vranashodhana", "Raktashodhaka"],
+    source_references: [
+      { title: "Memorial Sloan Kettering — Neem Monograph", url: "https://www.mskcc.org" }
+    ]
   },
   {
     id: "plant-brahmi",
@@ -279,7 +325,23 @@ export const FALLBACK_PLANTS = [
     cultivation_information: "Requires continuously damp, moisture-retentive soil and partial to full sunlight. Can be grown in shallow water bowls.",
     safety_information: "May cause mild gastrointestinal upset or nausea if taken on an empty stomach. Consult your practitioner before combining with thyroid or antidepressant prescriptions.",
     image_url: "/assets/brahmi.jpg",
-    is_published: true
+    is_published: true,
+    sanskrit_synonyms: ["Jalabrahmi", "Aindri", "Somavalli", "Sharada"],
+    part_used: ["Panchanga", "Patra"],
+    main_indications: ["Unmada", "Kushta", "Jwara", "Shotha", "Pandu"],
+    pacify: ["Vata", "Pitta", "Kapha"],
+    aggravate: [],
+    tridosha: true,
+    rasa: ["Tikta", "Kashaya"],
+    guna: ["Laghu", "Sara"],
+    virya: "Sheeta",
+    vipaka: "Madhura",
+    prabhav: ["Medhya", "Ayushya", "Rasayana"],
+    source_references: [
+      { title: "NCCIH — Bacopa monnieri Evidence Summary", url: "https://www.nccih.nih.gov" },
+      { title: "Amidha Ayurveda — Brahmi Monograph", url: "https://www.amidhaayurveda.com/p/brahmi.html" },
+      { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
+    ]
   },
   {
     id: "plant-turmeric",
@@ -296,7 +358,23 @@ export const FALLBACK_PLANTS = [
     cultivation_information: "Requires rich, well-draining loamy soil, warmth, high humidity, and regular moisture. Harvest when foliage yellows.",
     safety_information: "High therapeutic doses should be avoided by individuals with gallstones, bile duct obstructions, or those on anticoagulation therapy.",
     image_url: "/assets/turmeric.jpg",
-    is_published: true
+    is_published: true,
+    sanskrit_synonyms: ["Haridra", "Kanchani", "Nisha", "Gauri"],
+    part_used: ["Kanda"],
+    main_indications: ["Prameha", "Kushta", "Krimi", "Aruchi", "Twakroga"],
+    pacify: ["Kapha", "Vata"],
+    aggravate: ["Pitta"],
+    tridosha: false,
+    rasa: ["Tikta", "Katu"],
+    guna: ["Ruksha", "Laghu"],
+    virya: "Ushna",
+    vipaka: "Katu",
+    prabhav: ["Lekhana", "Vishaghna", "Varnya"],
+    source_references: [
+      { title: "Kew Royal Botanic Gardens — Curcuma longa", url: "https://powo.science.kew.org" },
+      { title: "Amidha Ayurveda — Haridra Monograph", url: "https://www.amidhaayurveda.com/p/turmeric.html" },
+      { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
+    ]
   },
   {
     id: "plant-aloe-vera",
@@ -313,7 +391,23 @@ export const FALLBACK_PLANTS = [
     cultivation_information: "Requires sandy, well-draining cactus soil, bright indirect sunlight, and thorough drying between waterings.",
     safety_information: "Do not consume outer yellow latex (aloin) during pregnancy. Inner filleted gel is gentle.",
     image_url: "/assets/aloe-vera.jpg",
-    is_published: true
+    is_published: true,
+    sanskrit_synonyms: ["Kumari", "Grihakanya", "Ghritkumarika", "Kanya"],
+    part_used: ["Patra", "Majja"],
+    main_indications: ["Gulma", "Pleeha", "Yakrit", "Jwara", "Granthi"],
+    pacify: ["Pitta", "Vata", "Kapha"],
+    aggravate: [],
+    tridosha: true,
+    rasa: ["Tikta"],
+    guna: ["Guru", "Snigdha", "Pichhila"],
+    virya: "Sheeta",
+    vipaka: "Katu",
+    prabhav: ["Bhedana", "Rasayana", "Chakshushya"],
+    source_references: [
+      { title: "NCCIH — Aloe Vera Facts", url: "https://www.nccih.nih.gov" },
+      { title: "Amidha Ayurveda — Kumari Monograph", url: "https://www.amidhaayurveda.com/p/aloe-vera.html" },
+      { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
+    ]
   },
   {
     id: "plant-giloy",
@@ -330,7 +424,23 @@ export const FALLBACK_PLANTS = [
     cultivation_information: "Very hardy vine propagated easily from cuttings; thrives in moist soil with trellis support.",
     safety_information: "Generally well-tolerated. Diabetics should monitor blood sugar levels as it may potentiate hypoglycemic medicines.",
     image_url: "/assets/herbal-wellness.jpg",
-    is_published: true
+    is_published: true,
+    sanskrit_synonyms: ["Guduchi", "Amrita", "Madhuparni", "Chinnaruha"],
+    part_used: ["Kanda"],
+    main_indications: ["Jwara", "Kamala", "Kushta", "Prameha", "Vatarakta"],
+    pacify: ["tridosha"],
+    aggravate: [],
+    tridosha: true,
+    rasa: ["Tikta"],
+    guna: ["Laghu", "Sara"],
+    virya: "Ushna",
+    vipaka: "Madhura",
+    prabhav: ["Jwaraghna", "Raktashodhak", "Shothahara", "rasayan"],
+    source_references: [
+      { title: "Ayurvedic Pharmacopoeia of India — Guduchi", url: "https://ayush.gov.in" },
+      { title: "Amidha Ayurveda — Giloy Monograph", url: "https://www.amidhaayurveda.com/p/giloy.html" },
+      { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
+    ]
   },
   {
     id: "plant-ginger",
@@ -347,7 +457,23 @@ export const FALLBACK_PLANTS = [
     cultivation_information: "Grows well in partial shade with loose, well-drained loamy compost. Keep moist but not waterlogged.",
     safety_information: "Caution for individuals with severe active peptic ulcers, acid reflux flare-ups, or gallstones.",
     image_url: "/assets/daily-wellness.jpg",
-    is_published: true
+    is_published: true,
+    sanskrit_synonyms: ["Shunthi", "Nagara", "Vishwabheshaja", "Mahaushadha"],
+    part_used: ["Kanda"],
+    main_indications: ["Agnimandya", "Shwasa", "Kasa", "Vamana", "Shoola"],
+    pacify: ["Vata", "Kapha"],
+    aggravate: ["Pitta"],
+    tridosha: false,
+    rasa: ["Katu"],
+    guna: ["Laghu", "Snigdha"],
+    virya: "Ushna",
+    vipaka: "Madhura",
+    prabhav: ["Deepana", "Pachana", "Grahi", "Rochana"],
+    source_references: [
+      { title: "WHO Monographs on Selected Medicinal Plants", url: "https://who.int" },
+      { title: "Amidha Ayurveda — Shunthi Monograph", url: "https://www.amidhaayurveda.com/p/ginger.html" },
+      { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
+    ]
   },
   {
     id: "plant-amla",
@@ -364,7 +490,24 @@ export const FALLBACK_PLANTS = [
     cultivation_information: "Thrives in deep loamy soil and full sun; highly drought and frost resistant once established.",
     safety_information: "High doses may loosen bowels due to natural vitamin C and tannin content. Safe for daily long-term use.",
     image_url: "/assets/amla.jpg",
-    is_published: true
+    is_published: true,
+    sanskrit_synonyms: ["Amalaki", "Dhatri", "Vayastha", "Vrishya"],
+    part_used: ["Phala"],
+    main_indications: ["Raktapitta", "Amlapitta", "Prameha", "Trishna"],
+    pacify: ["tridosha"],
+    aggravate: [],
+    tridosha: true,
+    rasa: ["Amla"],
+    guna: ["Laghu", "Snigdha"],
+    virya: "Sheeta",
+    vipaka: "Madhura",
+    prabhav: ["rasayan", "Chakshushya", "Hridaya", "Deepana"],
+    source_references: [
+      { title: "Charaka Samhita — Rasayana Adhyaya", url: "https://vedabase.io" },
+      { title: "NCCIH — Indian Gooseberry Overview", url: "https://www.nccih.nih.gov" },
+      { title: "Amidha Ayurveda — Amla Monograph", url: "https://www.amidhaayurveda.com/p/amla.html" },
+      { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
+    ]
   },
   {
     id: "plant-fenugreek",
@@ -381,7 +524,23 @@ export const FALLBACK_PLANTS = [
     cultivation_information: "Easily grown in containers or vegetable gardens; prefers loose, well-draining soil and moderate watering.",
     safety_information: "May lower blood glucose levels; diabetic patients taking hypoglycemic medication should monitor blood sugar. Avoid large therapeutic doses during pregnancy.",
     image_url: "/assets/fenugreek.jpg",
-    is_published: true
+    is_published: true,
+    sanskrit_synonyms: ["Methika", "Chandrika", "Munidruma", "Kalanusari"],
+    part_used: ["Bija", "Patra"],
+    main_indications: ["Prameha", "Agnimandya", "Grahani", "Jwara"],
+    pacify: ["Vata", "Kapha"],
+    aggravate: ["Pitta"],
+    tridosha: false,
+    rasa: ["Tikta", "Katu"],
+    guna: ["Laghu", "Snigdha"],
+    virya: "Ushna",
+    vipaka: "Katu",
+    prabhav: ["Deepana", "Vatanulomana", "Balya"],
+    source_references: [
+      { title: "Bhavaprakasha Nighantu — Haritakyadi Varga", url: "https://ayush.gov.in" },
+      { title: "Amidha Ayurveda — Methika Monograph", url: "https://www.amidhaayurveda.com/p/fenugreek.html" },
+      { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
+    ]
   },
   {
     id: "plant-shatavari",
@@ -398,7 +557,23 @@ export const FALLBACK_PLANTS = [
     cultivation_information: "Climbing woody shrub requiring trellis support, well-drained sandy loam, and partial shade.",
     safety_information: "Caution for individuals with severe asparagus allergies or estrogen-sensitive conditions. Generally gentle and nourishing.",
     image_url: "/assets/shatavari.jpg",
-    is_published: true
+    is_published: true,
+    sanskrit_synonyms: ["Shatamuli", "Atirasa", "Narayani", "Bahusuta"],
+    part_used: ["Moola"],
+    main_indications: ["Stanyakshaya", "Raktapitta", "Amlapitta", "Shukrakshaya"],
+    pacify: ["Vata", "Pitta"],
+    aggravate: ["Kapha"],
+    tridosha: false,
+    rasa: ["Madhura"],
+    guna: ["Guru", "Snigdha"],
+    virya: "Sheeta",
+    vipaka: "Madhura",
+    prabhav: ["Stanyashodhana", "Shukrala", "rasayan", "Varnya"],
+    source_references: [
+      { title: "Sushruta Samhita — Sutrasthana", url: "https://vedabase.io" },
+      { title: "Amidha Ayurveda — Shatavari Monograph", url: "https://www.amidhaayurveda.com/p/shatavari.html" },
+      { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
+    ]
   },
   {
     id: "plant-karela",
@@ -415,7 +590,23 @@ export const FALLBACK_PLANTS = [
     cultivation_information: "Fast-growing annual climbing vine requiring sturdy trellis, warm weather, and regular watering.",
     safety_information: "Excessive intake of seeds may cause gastrointestinal discomfort. Monitor blood glucose closely when combined with antidiabetic prescription drugs.",
     image_url: "/assets/karela.jpg",
-    is_published: true
+    is_published: true,
+    sanskrit_synonyms: ["Karavellaka", "Sushavi", "Varivalli", "Urdhvasita"],
+    part_used: ["Phala", "Bija", "Patra"],
+    main_indications: ["Prameha", "Kushta", "Krimi", "Jwara", "Kamala"],
+    pacify: ["Kapha", "Pitta"],
+    aggravate: ["Vata"],
+    tridosha: false,
+    rasa: ["Tikta", "Katu"],
+    guna: ["Laghu", "Ruksha"],
+    virya: "Ushna",
+    vipaka: "Katu",
+    prabhav: ["Lekhana", "Deepana", "Bhedana"],
+    source_references: [
+      { title: "Charaka Samhita — Shakavarga", url: "https://vedabase.io" },
+      { title: "Amidha Ayurveda — Karavellaka Monograph", url: "https://www.amidhaayurveda.com/p/karela.html" },
+      { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
+    ]
   }
 ];
 

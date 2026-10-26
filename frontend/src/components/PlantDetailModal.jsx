@@ -145,6 +145,101 @@ export default function PlantDetailModal({
             </div>
           )}
 
+          {/* Section: Classical Ayurvedic Pharmacology (Dravyaguna) */}
+          {((plant.rasa && plant.rasa.length > 0) || plant.virya || plant.vipaka || (plant.pacify && plant.pacify.length > 0) || plant.tridosha || (plant.main_indications && plant.main_indications.length > 0)) && (
+            <div className="space-y-3 bg-[#F4EFE0]/60 p-4 rounded-2xl border border-[#DDD6C3]">
+              <h3 className="font-serif text-lg font-bold text-[#113E21] flex items-center gap-2">
+                <Sprout className="w-4 h-4 text-[#4E8738]" />
+                <span>{isHindi ? 'आयुर्वेदिक द्रव्यगुण एवं दोष प्रभाव' : 'Classical Ayurvedic Pharmacology (Dravyaguna)'}</span>
+              </h3>
+
+              {/* Dosha Karma Badges */}
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                {plant.tridosha ? (
+                  <span className="px-3 py-1 rounded-full bg-[#E2ECD5] text-[#113E21] border border-[#6C9352] text-xs font-semibold">
+                    ✨ {isHindi ? 'त्रिदोष शामक (Tridoshic)' : 'Tridosha Balancer (Vata, Pitta, Kapha)'}
+                  </span>
+                ) : null}
+                {plant.pacify && plant.pacify.length > 0 && !plant.tridosha && (
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="font-semibold text-[#174B2B]">{isHindi ? 'शामक:' : 'Pacifies:'}</span>
+                    <div className="flex flex-wrap gap-1">
+                      {plant.pacify.map((d, i) => (
+                        <span key={i} className="px-2.5 py-0.5 rounded-full bg-[#E2ECD5] text-[#113E21] font-medium text-xs">
+                          {d}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {plant.aggravate && plant.aggravate.length > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="font-semibold text-[#8F3A2B]">{isHindi ? 'वर्धक:' : 'Aggravates:'}</span>
+                    <div className="flex flex-wrap gap-1">
+                      {plant.aggravate.map((d, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded-full bg-[#FFF0EB] text-[#8F3A2B] font-medium text-xs border border-[#F2C9B3]">
+                          {d}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Dravyaguna Grid: Rasa, Guna, Virya, Vipaka */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-xs">
+                {plant.rasa && plant.rasa.length > 0 && (
+                  <div className="p-2.5 rounded-xl bg-[#FAF8F2] border border-[#DDD6C3]">
+                    <span className="font-semibold text-[#4E8738] uppercase tracking-wider block mb-0.5">{isHindi ? 'रस (Taste)' : 'Rasa (Taste)'}</span>
+                    <span className="text-[#113E21] font-medium">{plant.rasa.join(', ')}</span>
+                  </div>
+                )}
+                {plant.guna && plant.guna.length > 0 && (
+                  <div className="p-2.5 rounded-xl bg-[#FAF8F2] border border-[#DDD6C3]">
+                    <span className="font-semibold text-[#4E8738] uppercase tracking-wider block mb-0.5">{isHindi ? 'गुण (Quality)' : 'Guna (Quality)'}</span>
+                    <span className="text-[#113E21] font-medium">{plant.guna.join(', ')}</span>
+                  </div>
+                )}
+                {plant.virya && (
+                  <div className="p-2.5 rounded-xl bg-[#FAF8F2] border border-[#DDD6C3]">
+                    <span className="font-semibold text-[#4E8738] uppercase tracking-wider block mb-0.5">{isHindi ? 'वीर्य (Potency)' : 'Virya (Potency)'}</span>
+                    <span className="text-[#113E21] font-medium">{plant.virya}</span>
+                  </div>
+                )}
+                {plant.vipaka && (
+                  <div className="p-2.5 rounded-xl bg-[#FAF8F2] border border-[#DDD6C3]">
+                    <span className="font-semibold text-[#4E8738] uppercase tracking-wider block mb-0.5">{isHindi ? 'विपाक' : 'Vipaka'}</span>
+                    <span className="text-[#113E21] font-medium">{plant.vipaka}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Prabhava & Main Indications */}
+              {((plant.prabhav && plant.prabhav.length > 0) || (plant.main_indications && plant.main_indications.length > 0)) && (
+                <div className="pt-2 border-t border-[#DDD6C3]/70 space-y-1.5 text-xs">
+                  {plant.prabhav && plant.prabhav.length > 0 && (
+                    <div>
+                      <span className="font-semibold text-[#174B2B]">{isHindi ? 'प्रभाव (Specific Actions): ' : 'Prabhava (Special Action): '}</span>
+                      <span className="text-[#2D3E33]">{plant.prabhav.join(', ')}</span>
+                    </div>
+                  )}
+                  {plant.main_indications && plant.main_indications.length > 0 && (
+                    <div>
+                      <span className="font-semibold text-[#174B2B]">{isHindi ? 'प्रमुख संकेत (Indications): ' : 'Indications (Roga / Vyadhi): '}</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {plant.main_indications.map((ind, i) => (
+                          <span key={i} className="px-2 py-0.5 rounded-md bg-[#FAF8F2] border border-[#DDD6C3] text-[#113E21] font-medium text-[11px]">
+                            {ind}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Section: Plant Parts & Cultivation */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#FAF6EE] p-4 rounded-2xl border border-[#DDD6C3]">
             {plant.plant_parts_used && (
@@ -192,10 +287,10 @@ export default function PlantDetailModal({
             </div>
           </div>
 
-          {/* Scientific Source References */}
+          {/* Scientific Source References & CC BY 4.0 Attribution */}
           {plant.source_references && plant.source_references.length > 0 && (
-            <div className="pt-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#4E8738] block mb-2">
+            <div className="pt-2 space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#4E8738] block">
                 {t('plantDetail.sourceReferences')}
               </span>
               <div className="flex flex-wrap gap-2">
@@ -211,6 +306,36 @@ export default function PlantDetailModal({
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 ))}
+              </div>
+              <div className="text-[11px] text-[#556B5D] pt-1">
+                <span>Botanical & Ayurvedic pharmacological metadata sourced from </span>
+                <a
+                  href="https://www.amidhaayurveda.com/p/herb-database.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-[#174B2B] font-medium"
+                >
+                  Amidha Ayurveda Herb Database v2.0
+                </a>
+                <span> by Sparsh Varshney (</span>
+                <a
+                  href="https://creativecommons.org/licenses/by/4.0/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-[#174B2B]"
+                >
+                  CC BY 4.0
+                </a>
+                <span>, DOI: </span>
+                <a
+                  href="https://doi.org/10.5281/zenodo.17475351"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-[#174B2B]"
+                >
+                  10.5281/zenodo.17475351
+                </a>
+                <span>).</span>
               </div>
             </div>
           )}
