@@ -3,12 +3,16 @@ Herbora Backend Application Entry Point
 Flask REST API with SQLAlchemy Database & Seeding
 """
 import os
+import sys
 from flask import Flask, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 
-# Load environment variables: project root .env first, then backend .env
+# Ensure backend directory is in sys.path regardless of execution root
 _base_dir = os.path.dirname(os.path.abspath(__file__))
+if _base_dir not in sys.path:
+    sys.path.insert(0, _base_dir)
+
 _root_env = os.path.abspath(os.path.join(_base_dir, '..', '.env'))
 _backend_env = os.path.abspath(os.path.join(_base_dir, '.env'))
 if os.path.exists(_root_env):
