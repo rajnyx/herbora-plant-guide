@@ -222,7 +222,10 @@ def get_plants():
             query = query.filter(
                 (Plant.common_name.ilike(f"%{search_q}%")) |
                 (Plant.scientific_name.ilike(f"%{search_q}%")) |
-                (Plant.ayurvedic_name.ilike(f"%{search_q}%"))
+                (Plant.ayurvedic_name.ilike(f"%{search_q}%")) |
+                (Plant.english_name.ilike(f"%{search_q}%")) |
+                (Plant.virya.ilike(f"%{search_q}%")) |
+                (Plant.vipaka.ilike(f"%{search_q}%"))
             )
             
         plants = query.order_by(Plant.common_name.asc()).all()
@@ -252,8 +255,9 @@ def search_plants():
             (Plant.common_name.ilike(f"%{q}%")) |
             (Plant.scientific_name.ilike(f"%{q}%")) |
             (Plant.ayurvedic_name.ilike(f"%{q}%")) |
+            (Plant.english_name.ilike(f"%{q}%")) |
             (Plant.description.ilike(f"%{q}%"))
-        ).limit(10).all()
+        ).limit(20).all()
         return jsonify([p.to_dict() for p in plants])
     finally:
         db.close()
