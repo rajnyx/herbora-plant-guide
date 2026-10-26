@@ -34,11 +34,13 @@ def create_app():
     # Register blueprints
     app.register_blueprint(api_bp)
 
-    # Initialize tables
-    init_db()
-
-    # Seed initial plants if empty
-    seed_initial_data()
+    # Initialize tables and seed data (in serverless/Vercel, skip heavy sync on cold starts)
+    if os.getenv("VERCEL") is None or os.getenv("RUN_DB_INIT_ON_STARTUP", "false").lower() == "true":
+        try:
+            init_db()
+            seed_initial_data()
+        except Exception as e:
+            print(f"Startup DB init notice (safe to continue): {e}")
 
     @app.route('/')
     def root():
@@ -329,8 +331,11 @@ def seed_initial_data():
     finally:
         db.close()
 
+# Expose Flask application instance for Vercel Serverless Functions and WSGI runtimes
+app = create_app()
+application = app
+
 if __name__ == '__main__':
-    app = create_app()
     port = int(os.getenv('PORT', 5000))
     print(f"Herbora Backend starting on http://127.0.0.1:{port}")
     app.run(host='0.0.0.0', port=port, debug=True)
