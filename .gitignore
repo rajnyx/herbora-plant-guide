@@ -3,7 +3,10 @@
 .env.*
 *.env
 backend/.env
+frontend/.env
 !.env.example
+!backend/.env.example
+!frontend/.env.example
 
 # Python bytecode and caches
 __pycache__/
