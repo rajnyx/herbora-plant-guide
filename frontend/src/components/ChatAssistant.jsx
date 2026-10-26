@@ -52,16 +52,21 @@ export default function ChatAssistant({ onExplorePlants }) {
 
     try {
       const data = await sendBotChat(text);
-      setMessages((prev) => [
-        ...prev,
-        { sender: 'bot', text: data.reply || "I am glad to help with any plant or herbal remedy question." }
-      ]);
+      if (data && data.reply) {
+        setMessages((prev) => [
+          ...prev,
+          { sender: 'bot', text: data.reply }
+        ]);
+      } else {
+        throw new Error("No response from botanical service");
+      }
     } catch (err) {
+      console.warn("Bot chat fallback triggered:", err);
       setMessages((prev) => [
         ...prev,
         { 
           sender: 'bot', 
-          text: "Herbs carry specific energies (Virya) and tastes (Rasa). For immunity, Tulsi and Giloy are classical; for evening calm, warm golden milk with turmeric and nutmeg is wonderful!" 
+          text: "Herbs carry specific energies (Virya) and tastes (Rasa). For immunity, Tulsi and Giloy are classical; for evening calm, warm golden milk with turmeric and nutmeg is wonderful! Ask me about any plant or traditional remedy." 
         }
       ]);
     } finally {
@@ -130,7 +135,7 @@ export default function ChatAssistant({ onExplorePlants }) {
                 className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div 
-                  className={`max-w-[82%] p-3 rounded-xl leading-relaxed ${
+                  className={`max-w-[85%] p-3 rounded-xl leading-relaxed whitespace-pre-wrap ${
                     m.sender === 'user'
                       ? 'bg-[#174B2B] text-[#FAF7EE] rounded-br-xs'
                       : 'bg-[#E8E0CF]/80 text-[#174B2B] border border-[#D2CFBF] rounded-bl-xs'

@@ -1,20 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { HelpCircle, CheckCircle2, XCircle, RotateCcw, Award, ArrowRight, Sparkles } from 'lucide-react';
+import { HelpCircle, CheckCircle2, XCircle, RotateCcw, RotateCw, Award, ArrowRight, Sparkles } from 'lucide-react';
 import { fetchQuiz, FALLBACK_QUIZ } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 
+function sampleRandomQuestions(pool, count = 5, excludeIds = []) {
+  if (!Array.isArray(pool) || pool.length === 0) return [];
+  // Prioritize questions not in excludeIds so refreshed sets are completely fresh
+  const nonExcluded = pool.filter((q) => !excludeIds.includes(q.id));
+  if (nonExcluded.length >= count) {
+    const shuffled = [...nonExcluded].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  }
+  // If not enough questions outside excludeIds, shuffle the whole pool
+  const shuffled = [...pool].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, Math.min(count, pool.length));
+}
+
 export default function QuizPage() {
   const { t, localizeQuiz, isHindi } = useLanguage();
-  const [questions, setQuestions] = useState(FALLBACK_QUIZ);
+  const [fullPool, setFullPool] = useState(FALLBACK_QUIZ);
+  const [questions, setQuestions] = useState(() => sampleRandomQuestions(FALLBACK_QUIZ, 5));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [score, setScore] = useState(0);
   const [isAnswered, setIsAnswered] = useState(false);
   const [quizFinished, setQuizFinished] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     fetchQuiz().then((data) => {
-      if (Array.isArray(data) && data.length > 0) setQuestions(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setFullPool(data);
+        setQuestions(sampleRandomQuestions(data, 5));
+      }
     }).catch(() => {});
   }, []);
 
@@ -47,6 +65,21 @@ export default function QuizPage() {
     setIsAnswered(false);
     setScore(0);
     setQuizFinished(false);
+  };
+
+  const handleRefreshQuestions = () => {
+    setIsRefreshing(true);
+    const currentIds = questions.map((q) => q.id);
+    const newSample = sampleRandomQuestions(fullPool, 5, currentIds);
+    setQuestions(newSample);
+    setCurrentIndex(0);
+    setSelectedOption(null);
+    setIsAnswered(false);
+    setScore(0);
+    setQuizFinished(false);
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 400);
   };
 
   if (!currentQ && !quizFinished) {
@@ -85,14 +118,25 @@ export default function QuizPage() {
       {!quizFinished ? (
         /* Question Card */
         <div className="bg-[#FFFDF8] border border-[#DDD6C3] rounded-3xl p-6 sm:p-8 shadow-sm herbora-rise space-y-6">
-          {/* Progress Bar */}
-          <div className="flex items-center justify-between text-xs text-[#43634E] font-medium mb-1">
-            <span>
+          {/* Progress Bar & Refresh Row */}
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[#43634E] font-medium mb-1">
+            <span className="font-semibold text-[#113E21]">
               {t('quiz.questionPrefix', 'Question')} {currentIndex + 1} {t('quiz.of', 'of')} {questions.length}
             </span>
-            <span className="font-semibold text-[#113E21]">
-              {isHindi ? 'अंक' : 'Score'}: {score}
-            </span>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={handleRefreshQuestions}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-[#2E6B3B] hover:text-[#113E21] bg-[#F4EFE3] hover:bg-[#EAE2D0] active:scale-95 px-3 py-1.5 rounded-lg border border-[#D5CDBC] transition-all cursor-pointer shadow-2xs"
+                title={t('quiz.refreshQuestions', 'Refresh Questions')}
+              >
+                <RotateCw className={`w-3.5 h-3.5 transition-transform duration-500 ${isRefreshing ? 'rotate-180 text-[#113E21]' : ''}`} />
+                <span>{t('quiz.refreshQuestions', 'Refresh Questions')}</span>
+              </button>
+              <span className="font-semibold text-[#113E21] bg-[#E2ECD5] px-2.5 py-1.5 rounded-lg border border-[#CAD9B5]">
+                {isHindi ? 'अंक' : 'Score'}: {score}
+              </span>
+            </div>
           </div>
           <div className="w-full h-2 rounded-full bg-[#EAE6DC] overflow-hidden">
             <div 
@@ -191,13 +235,22 @@ export default function QuizPage() {
             )}
           </div>
 
-          <button
-            onClick={handleRestart}
-            className="herbora-btn-primary py-3 px-6 mx-auto cursor-pointer"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span>{t('quiz.retakeQuiz', 'Retake Quiz')}</span>
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <button
+              onClick={handleRestart}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 py-3 px-5 rounded-xl border border-[#DDD6C3] bg-white hover:bg-[#F2EAD9] text-[#113E21] font-medium text-sm transition-all cursor-pointer shadow-2xs"
+            >
+              <RotateCcw className="w-4 h-4 text-[#4E8738]" />
+              <span>{t('quiz.retakeQuiz', 'Retake Quiz')}</span>
+            </button>
+            <button
+              onClick={handleRefreshQuestions}
+              className="w-full sm:w-auto herbora-btn-primary py-3 px-6 cursor-pointer"
+            >
+              <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>{t('quiz.newQuestions', 'New Questions')}</span>
+            </button>
+          </div>
         </div>
       )}
     </div>
