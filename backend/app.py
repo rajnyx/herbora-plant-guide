@@ -29,24 +29,38 @@ app = Flask(__name__)
 application = app
 
 CORS(app, resources={
-    r"/api/*": {
-        "origins": "*",
+    r"/*": {
+        "origins": [
+            "https://herbora-plant-guide-fdhcgvep5-raj-c54f.vercel.app",
+            r"https://.*\.vercel\.app",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000"
+        ],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization", "X-User-Id"]
+        "allow_headers": ["Content-Type", "Authorization", "X-User-Id"],
+        "supports_credentials": False
     }
 })
 
 # Register blueprints
 app.register_blueprint(api_bp)
 
-
 @app.route('/')
 def root():
     return jsonify({
         "name": "Herbora Ayurvedic API",
         "tagline": "Ancient Wisdom • Modern Discovery",
-        "endpoints": "/api/health, /api/plants, /api/identify, /api/chat, /api/dincharya, /api/remedies"
+        "status": "online",
+        "endpoints": "/api/health, /api/health/db, /api/plants, /api/identify, /api/chat, /api/dincharya, /api/remedies"
     })
+
+@app.route('/health')
+@app.route('/api/health')
+def root_health():
+    from routes import health_check
+    return health_check()
 
 def create_app():
     """Application factory compatibility wrapper"""

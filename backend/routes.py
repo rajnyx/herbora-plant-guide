@@ -516,6 +516,9 @@ def get_plants():
             
         plants = query.order_by(Plant.common_name.asc()).all()
         return jsonify([p.to_dict() for p in plants])
+    except Exception as e:
+        print(f"Notice: Database query in get_plants encountered: {e}")
+        return jsonify(AYURVEDIC_BOTANICAL_SIGNATURES)
     finally:
         db.close()
 
@@ -527,8 +530,17 @@ def get_plant_detail(slug_or_id):
             (Plant.slug == slug_or_id) | (Plant.id == slug_or_id)
         ).first()
         if not plant:
+            for sig in AYURVEDIC_BOTANICAL_SIGNATURES:
+                if sig.get("slug") == slug_or_id:
+                    return jsonify(sig)
             return jsonify({"error": "Plant not found in Herbora database"}), 404
         return jsonify(plant.to_dict())
+    except Exception as e:
+        print(f"Notice: Database query in get_plant_detail encountered: {e}")
+        for sig in AYURVEDIC_BOTANICAL_SIGNATURES:
+            if sig.get("slug") == slug_or_id:
+                return jsonify(sig)
+        return jsonify({"error": "Plant detail temporarily unavailable"}), 503
     finally:
         db.close()
 
@@ -1130,9 +1142,46 @@ def auth_get_user(user_id):
 
 @api_bp.route('/health', methods=['GET'])
 def health_check():
+    db_connected = False
+    dialect_name = "unknown"
+    try:
+        from sqlalchemy import text
+        from models import engine
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1;"))
+            db_connected = True
+            dialect_name = engine.dialect.name
+    except Exception:
+        db_connected = False
+
     return jsonify({
-        "status": "healthy",
+        "status": "healthy" if db_connected else "degraded",
         "service": "Herbora Backend API",
         "version": "1.0.0",
-        "ayurveda_plants_seeded": len(AYURVEDIC_BOTANICAL_SIGNATURES)
-    })
+        "database": {
+            "connected": db_connected,
+            "dialect": dialect_name
+        },
+        "ayurveda_botanical_signatures": len(AYURVEDIC_BOTANICAL_SIGNATURES)
+    }), 200
+
+@api_bp.route('/health/db', methods=['GET'])
+def health_check_db():
+    try:
+        from sqlalchemy import text
+        from models import engine
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1;"))
+            count = conn.execute(text("SELECT count(*) FROM plants;")).scalar()
+            return jsonify({
+                "status": "healthy",
+                "connected": True,
+                "dialect": engine.dialect.name,
+                "plants_count": count
+            }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "unhealthy",
+            "connected": False,
+            "error": "Database connectivity check failed"
+        }), 503

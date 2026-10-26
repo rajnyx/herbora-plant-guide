@@ -265,12 +265,35 @@ if os.path.exists(_backend_env):
 raw_db_url = os.getenv('DATABASE_URL', '').strip()
 if not raw_db_url or raw_db_url in ('sqlite:///herbora.db', 'sqlite:///./herbora.db'):
     DATABASE_URL = f"sqlite:///{CANONICAL_SQLITE_PATH}"
-elif raw_db_url.startswith("postgres://"):
-    DATABASE_URL = raw_db_url.replace("postgres://", "postgresql://", 1)
 else:
-    DATABASE_URL = raw_db_url
+    if raw_db_url.startswith("postgres://"):
+        raw_db_url = raw_db_url.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True, pool_recycle=300)
+    # Auto-map Supabase direct host (which is IPv6-only and unreachable on AWS Lambda / Vercel)
+    # to the Supabase connection pooler in ap-southeast-1 with full IPv4 support
+    import re
+    m = re.match(r'postgresql://([^:]+):([^@]+)@db\.([a-z0-9]+)\.supabase\.co(?::\d+)?/(.+)', raw_db_url)
+    if m:
+        user, pwd, ref, dbname = m.groups()
+        pooler_user = f"{user}.{ref}" if '.' not in user else user
+        DATABASE_URL = f"postgresql://{pooler_user}:{pwd}@aws-0-ap-southeast-1.pooler.supabase.com:5432/{dbname}"
+    else:
+        DATABASE_URL = raw_db_url
+
+# Configure engine with connection timeouts and pre-ping
+connect_args = {}
+if "postgresql" in DATABASE_URL:
+    connect_args = {"connect_timeout": 8, "sslmode": "require"}
+else:
+    connect_args = {"check_same_thread": False}
+
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    connect_args=connect_args
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():
