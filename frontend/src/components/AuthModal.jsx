@@ -83,7 +83,17 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialSignU
     try {
       if (isSignUp) {
         const data = await signUpWithEmail(email, password, fullName);
-        if (data?.needsEmailConfirmation) {
+        if (data?.alreadyExisted) {
+          setSuccessMsg('Welcome back! You already have an account with this email, so you have been signed in.');
+          if (data?.user && onAuthSuccess) {
+            onAuthSuccess(data.user);
+            setTimeout(() => {
+              handleClose();
+            }, 1200);
+          } else {
+            switchMode(false);
+          }
+        } else if (data?.needsEmailConfirmation) {
           setSuccessMsg('Account created! Please check your email inbox to confirm your account before signing in.');
           setTimeout(() => {
             switchMode(false);
@@ -148,9 +158,29 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialSignU
 
         {/* Alerts */}
         {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-[#FDF2F0] border border-[#F5C2BC] text-[#9E2B25] text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{errorMsg}</span>
+          <div className="mb-4 p-3 rounded-xl bg-[#FDF2F0] border border-[#F5C2BC] text-[#9E2B25] text-xs flex flex-col gap-1.5 herbora-rise">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className="leading-relaxed font-medium">{errorMsg}</span>
+            </div>
+            {isSignUp && (errorMsg.toLowerCase().includes('already registered') || errorMsg.toLowerCase().includes('already exists') || errorMsg.toLowerCase().includes('sign in')) && (
+              <button
+                type="button"
+                onClick={() => switchMode(false)}
+                className="self-start ml-6 text-[11px] font-semibold text-[#8F231D] underline underline-offset-2 hover:text-[#5F1410] cursor-pointer"
+              >
+                Click here to Sign In with this email &rarr;
+              </button>
+            )}
+            {!isSignUp && (errorMsg.toLowerCase().includes('no account found') || errorMsg.toLowerCase().includes('create an account') || errorMsg.toLowerCase().includes('sign up')) && (
+              <button
+                type="button"
+                onClick={() => switchMode(true)}
+                className="self-start ml-6 text-[11px] font-semibold text-[#8F231D] underline underline-offset-2 hover:text-[#5F1410] cursor-pointer"
+              >
+                Click here to Create an Account with this email &rarr;
+              </button>
+            )}
           </div>
         )}
 
