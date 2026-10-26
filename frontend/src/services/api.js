@@ -1,10 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase Client initialization
-const SUPABASE_URL = "https://igjmrfwqixvfftbryoyy.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_VwySw5lt7hYiDPtmVCirBQ_6EgvzgKL";
+// Supabase Client initialization using Vite environment variables
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    })
+  : null;
 
 const API_BASE = '/api';
 
@@ -16,10 +24,10 @@ function notifyAuthSubscribers(user) {
   });
 }
 
-function withTimeout(promise, ms = 1500) {
+function withTimeout(promise, ms = 8000) {
   return Promise.race([
     promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Supabase request timed out')), ms))
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Supabase request timed out. Please check your network connection.')), ms))
   ]);
 }
 
@@ -49,132 +57,129 @@ export async function isBackendAvailable() {
   return backendAvailable;
 }
 
-// --- Hybrid Supabase + Local Backend Authentication Helpers ---
+// --- Supabase Primary + Flask Backend Secondary Authentication ---
 
 export async function signUpWithEmail(email, password, fullName = '') {
-  // 1. Try Supabase first if available with timeout
-  try {
+  // 1. Primary: Supabase Auth
+  if (supabase) {
     const { data, error } = await withTimeout(supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: fullName }
       }
-    }));
-    if (error) throw error;
-    if (data?.user) {
-      localStorage.setItem('herbora_user_session', JSON.stringify(data.user));
-      notifyAuthSubscribers(data.user);
-      return data;
+    }), 8000);
+
+    if (error) {
+      throw error;
     }
-  } catch (supabaseErr) {
-    console.warn("Supabase auth unavailable, trying Herbora backend auth:", supabaseErr.message);
+
+    if (data?.user) {
+      // If email confirmation is required by Supabase project settings, session will be null
+      const needsEmailConfirmation = !data.session;
+      if (data.session) {
+        localStorage.setItem('herbora_user_session', JSON.stringify(data.user));
+        notifyAuthSubscribers(data.user);
+      }
+      return {
+        user: data.user,
+        session: data.session,
+        needsEmailConfirmation
+      };
+    }
   }
 
-  // 2. Try Python backend auth if available
+  // 2. Secondary: If Supabase client is not configured, try Python backend auth
   const available = await isBackendAvailable();
   if (available) {
-    try {
-      const res = await fetch(`${API_BASE}/auth/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, full_name: fullName })
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error || 'Failed to create account');
-      }
-      localStorage.setItem('herbora_user_session', JSON.stringify(json.user));
-      notifyAuthSubscribers(json.user);
-      return { user: json.user, session: null };
-    } catch (backendErr) {
-      if (backendErr.message && !backendErr.message.includes('fetch')) throw backendErr;
+    const res = await fetch(`${API_BASE}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, full_name: fullName })
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.error || 'Failed to create account');
     }
+    localStorage.setItem('herbora_user_session', JSON.stringify(json.user));
+    notifyAuthSubscribers(json.user);
+    return { user: json.user, session: null, needsEmailConfirmation: false };
   }
 
-  // 3. Resilient client-side authentication fallback
-  const localUser = {
-    id: `local_user_${Date.now()}`,
-    email,
-    user_metadata: { full_name: fullName || email.split('@')[0] },
-    full_name: fullName || email.split('@')[0]
-  };
-  localStorage.setItem('herbora_user_session', JSON.stringify(localUser));
-  notifyAuthSubscribers(localUser);
-  return { user: localUser, session: null };
+  throw new Error("Authentication service is unavailable. Please verify your Supabase configuration in frontend/.env.");
 }
 
 export async function signInWithEmail(email, password) {
-  // 1. Try Supabase first if available with timeout
-  try {
+  // 1. Primary: Supabase Auth
+  if (supabase) {
     const { data, error } = await withTimeout(supabase.auth.signInWithPassword({
       email,
       password
-    }));
-    if (error) throw error;
+    }), 8000);
+
+    if (error) {
+      if (error.message?.toLowerCase().includes('email not confirmed')) {
+        throw new Error('Please confirm your email address before signing in. Check your inbox for the confirmation link.');
+      }
+      if (error.message?.toLowerCase().includes('invalid login credentials')) {
+        throw new Error('Invalid email or password. Please verify your credentials or create a new account.');
+      }
+      throw error;
+    }
+
     if (data?.user) {
       localStorage.setItem('herbora_user_session', JSON.stringify(data.user));
       notifyAuthSubscribers(data.user);
       return data;
     }
-  } catch (supabaseErr) {
-    console.warn("Supabase auth unavailable, trying Herbora backend auth:", supabaseErr.message);
   }
 
-  // 2. Try Python backend auth if available
+  // 2. Secondary: If Supabase client is not configured, try Python backend auth
   const available = await isBackendAvailable();
   if (available) {
-    try {
-      const res = await fetch(`${API_BASE}/auth/signin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error || 'Invalid email or password');
-      }
-      localStorage.setItem('herbora_user_session', JSON.stringify(json.user));
-      notifyAuthSubscribers(json.user);
-      return { user: json.user, session: null };
-    } catch (backendErr) {
-      if (backendErr.message && !backendErr.message.includes('fetch')) throw backendErr;
+    const res = await fetch(`${API_BASE}/auth/signin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.error || 'Invalid email or password');
     }
+    localStorage.setItem('herbora_user_session', JSON.stringify(json.user));
+    notifyAuthSubscribers(json.user);
+    return { user: json.user, session: null };
   }
 
-  // 3. Resilient client-side login fallback
-  const localUser = {
-    id: `local_user_${Date.now()}`,
-    email,
-    user_metadata: { full_name: email.split('@')[0] },
-    full_name: email.split('@')[0]
-  };
-  localStorage.setItem('herbora_user_session', JSON.stringify(localUser));
-  notifyAuthSubscribers(localUser);
-  return { user: localUser, session: null };
+  throw new Error("Unable to sign in. Please verify that your Supabase credentials or backend server are configured.");
 }
 
 export async function signOutUser() {
-  try {
-    await withTimeout(supabase.auth.signOut(), 1000);
-  } catch {
-    // Supabase offline
+  if (supabase) {
+    try {
+      await withTimeout(supabase.auth.signOut(), 3000);
+    } catch {
+      // Supabase offline / network error
+    }
   }
   localStorage.removeItem('herbora_user_session');
   notifyAuthSubscribers(null);
 }
 
 export async function getCurrentUser() {
-  try {
-    const { data: { user } } = await withTimeout(supabase.auth.getUser(), 1200);
-    if (user) {
-      localStorage.setItem('herbora_user_session', JSON.stringify(user));
-      return user;
+  if (supabase) {
+    try {
+      const { data: { user } } = await withTimeout(supabase.auth.getUser(), 3000);
+      if (user) {
+        localStorage.setItem('herbora_user_session', JSON.stringify(user));
+        return user;
+      }
+    } catch {
+      // Supabase offline, check cached session
     }
-  } catch {
-    // Supabase offline
   }
 
+  // Preserve existing cached user session if available
   const stored = localStorage.getItem('herbora_user_session');
   if (stored) {
     try {
@@ -190,16 +195,23 @@ export function subscribeToAuthChanges(callback) {
   authSubscribers.add(callback);
 
   let unsubscribeSupabase = () => {};
-  try {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        localStorage.setItem('herbora_user_session', JSON.stringify(session.user));
-        callback(session.user);
+  if (supabase) {
+    try {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          localStorage.setItem('herbora_user_session', JSON.stringify(session.user));
+          callback(session.user);
+        } else if (event === 'SIGNED_OUT') {
+          localStorage.removeItem('herbora_user_session');
+          callback(null);
+        }
+      });
+      if (subscription) {
+        unsubscribeSupabase = () => subscription.unsubscribe();
       }
-    });
-    unsubscribeSupabase = () => subscription.unsubscribe();
-  } catch {
-    // Supabase offline
+    } catch {
+      // Supabase offline
+    }
   }
 
   return () => {
