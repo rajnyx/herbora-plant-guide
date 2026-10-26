@@ -138,6 +138,16 @@ def import_amidha_dataset(dataset_path=None):
     # Ensure schema has all columns
     init_db()
 
+    # Load plant images dictionary if present
+    plant_images_path = os.path.join(os.path.dirname(__file__), "..", "database", "data", "plant_images.json")
+    plant_images = {}
+    if os.path.isfile(plant_images_path):
+        try:
+            with open(plant_images_path, "r", encoding="utf-8") as f:
+                plant_images = json.load(f)
+        except Exception:
+            pass
+
     db = SessionLocal()
     try:
         # Load all existing plants into memory
@@ -236,6 +246,10 @@ def import_amidha_dataset(dataset_path=None):
                         current_regional.append(syn)
                 target_plant.regional_names = current_regional
 
+                # Populate image_url if not already set
+                if not target_plant.image_url:
+                    target_plant.image_url = plant_images.get(target_plant.slug) or plant_images.get(slugify(name))
+
                 target_plant.updated_at = datetime.now(timezone.utc)
                 updated_count += 1
             else:
@@ -266,7 +280,7 @@ def import_amidha_dataset(dataset_path=None):
                     habitat=f"Botanical Family: {r.get('family', 'Plantae')}" if r.get("family") else None,
                     cultivation_information=None,
                     safety_information=safety_info,
-                    image_url=None,  # Frontend gracefully falls back to /assets/herbal-wellness.jpg
+                    image_url=plant_images.get(slug_candidate) or plant_images.get(slugify(name)),
                     source_references=source_refs,
                     is_published=True,
                     # Ayurvedic Dravyaguna properties

@@ -26,7 +26,7 @@ class Plant(Base):
     habitat = Column(Text, nullable=True)
     cultivation_information = Column(Text, nullable=True)
     safety_information = Column(Text, nullable=False)
-    image_url = Column(String(500), nullable=True)
+    image_url = Column(Text, nullable=True)
     source_references = Column(JSON, default=list)
     is_published = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -270,7 +270,7 @@ elif raw_db_url.startswith("postgres://"):
 else:
     DATABASE_URL = raw_db_url
 
-engine = create_engine(DATABASE_URL, echo=False)
+engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True, pool_recycle=300)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():
