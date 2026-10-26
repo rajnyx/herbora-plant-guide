@@ -266,11 +266,20 @@ def identify_via_plantnet(image_bytes, filename="plant.jpg"):
 
         response = requests.post(url, files=files, data=data, timeout=15)
         if response.status_code != 200:
+            # Pl@ntNet auto organ classifier often returns 404 when ambiguous; retry with leaf organ
+            response = requests.post(url, files=[('images', (filename, image_bytes, content_type))], data={'organs': ['leaf']}, timeout=15)
+
+        if response.status_code != 200:
             print(f"[Pl@ntNet API] Request failed with status {response.status_code}: {response.text[:200]}")
             return None
 
         res_data = response.json()
         results = res_data.get("results", [])
+        if not results:
+            # Try flower organ if leaf returned empty
+            response = requests.post(url, files=[('images', (filename, image_bytes, content_type))], data={'organs': ['flower']}, timeout=15)
+            if response.status_code == 200:
+                results = response.json().get("results", [])
         if not results:
             return None
 
