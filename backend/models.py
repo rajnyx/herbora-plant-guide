@@ -249,8 +249,18 @@ class Feedback(Base):
 
 
 # Database Connection Setup
+from dotenv import load_dotenv
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CANONICAL_SQLITE_PATH = os.path.join(BASE_DIR, 'herbora.db').replace('\\', '/')
+
+# Load project-level .env first, then backend-level .env without overwriting
+_root_env = os.path.abspath(os.path.join(BASE_DIR, '..', '.env'))
+_backend_env = os.path.abspath(os.path.join(BASE_DIR, '.env'))
+if os.path.exists(_root_env):
+    load_dotenv(dotenv_path=_root_env, override=False)
+if os.path.exists(_backend_env):
+    load_dotenv(dotenv_path=_backend_env, override=False)
 
 raw_db_url = os.getenv('DATABASE_URL', '').strip()
 if not raw_db_url or raw_db_url in ('sqlite:///herbora.db', 'sqlite:///./herbora.db'):
