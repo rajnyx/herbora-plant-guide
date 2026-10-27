@@ -242,7 +242,7 @@ export default async function handler(req) {
     const topSpecies = top.species || {};
     const score = top.score || 0;
 
-    if (score < 0.06) {
+    if (score < 0.02) {
       return new Response(
         JSON.stringify({
           status: 'error',

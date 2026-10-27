@@ -73,7 +73,7 @@ function herbauraDevApiPlugin() {
             }
 
             const pnetData = await pnetRes.json();
-            if (!pnetData.results || pnetData.results.length === 0 || (pnetData.results[0]?.score || 0) < 0.06) {
+            if (!pnetData.results || pnetData.results.length === 0 || (pnetData.results[0]?.score || 0) < 0.02) {
               res.statusCode = 400;
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({

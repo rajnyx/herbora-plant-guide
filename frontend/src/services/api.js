@@ -18,17 +18,11 @@ export const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY)
 // Base API URL Resolution:
 // 1. Checks VITE_API_URL or VITE_BACKEND_URL from environment variables
 // 2. In production builds, defaults to deployed Herbora backend URL
-// 3. In local development, routes to '/api' (proxied by Vite to localhost:5000)
-const DEPLOYED_BACKEND_URL = 'https://herbora-plant-guide-3u26-ajy0gy6j9-raj-c54f.vercel.app';
-
 function resolveApiBase() {
   const envUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '').trim();
   if (envUrl) {
     const clean = envUrl.replace(/\/+$/, '');
     return clean.endsWith('/api') ? clean : `${clean}/api`;
-  }
-  if (import.meta.env.PROD) {
-    return `${DEPLOYED_BACKEND_URL}/api`;
   }
   return '/api';
 }
@@ -2080,8 +2074,8 @@ export async function identifyViaPlantNetDirect(imageFile, preferredOrgan = 'aut
       const top = results[0];
       const topSpecies = top.species || {};
       const score = top.score || 0;
-      // Stricter botanical confidence threshold: below 6% means Pl@ntNet found no plausible plant match
-      if (score < 0.06) {
+      // Botanical confidence threshold: below 2% means Pl@ntNet found no plausible plant match
+      if (score < 0.02) {
         continue;
       }
 
@@ -2254,7 +2248,7 @@ export async function identifyPlantImage(imageFile, hint = '', userId = null, pr
   if (processedFile) {
     try {
       const directMatch = await identifyViaPlantNetDirect(processedFile, preferredOrgan);
-      if (directMatch && directMatch.confidence_score >= 6.0) {
+      if (directMatch && directMatch.confidence_score >= 2.0) {
         return directMatch;
       }
     } catch (pnetErr) {

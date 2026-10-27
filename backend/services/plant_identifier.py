@@ -306,8 +306,8 @@ def identify_via_plantnet(image_bytes, filename="plant.jpg"):
         top_match = results[0]
         score = top_match.get("score", 0)
 
-        # Confidence threshold: below 6% means Pl@ntNet did not find any plausible plant match
-        if score < 0.06:
+        # Confidence threshold: below 2% means Pl@ntNet did not find any plausible plant match
+        if score < 0.02:
             return {
                 "status": "error",
                 "error": "No confident plant match",
