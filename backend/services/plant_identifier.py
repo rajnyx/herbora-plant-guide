@@ -247,6 +247,27 @@ def find_ayurvedic_match(scientific_name, common_names=None):
                     c_clean == p["slug"]):
                     return p
 
+    # 4. Genus and broad Ayurvedic flora matching
+    c_list = [c.lower() for c in (common_names or [])]
+    if sci_clean.startswith("aloe") or any("aloe" in c for c in c_list):
+        return next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "aloe-vera"), None)
+    if sci_clean.startswith("ocimum") or any("basil" in c or "tulsi" in c for c in c_list):
+        return next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "tulsi"), None)
+    if sci_clean.startswith("azadirachta") or any("neem" in c for c in c_list):
+        return next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "neem"), None)
+    if sci_clean.startswith("curcuma") or any("turmeric" in c for c in c_list):
+        return next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "turmeric"), None)
+    if sci_clean.startswith("withania") or any("ashwagandha" in c for c in c_list):
+        return next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "ashwagandha"), None)
+    if sci_clean.startswith("phyllanthus") or any("gooseberry" in c or "amla" in c for c in c_list):
+        return next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "amla"), None)
+    if sci_clean.startswith("tinospora") or any("giloy" in c or "guduchi" in c for c in c_list):
+        return next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "giloy"), None)
+    if sci_clean.startswith("bacopa") or sci_clean.startswith("centella") or any("brahmi" in c for c in c_list):
+        return next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "brahmi"), None)
+    if sci_clean.startswith("zingiber") or any("ginger" in c for c in c_list):
+        return next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "ginger"), None)
+
     return None
 
 def identify_via_plantnet(image_bytes, filename="plant.jpg"):
@@ -406,19 +427,23 @@ def heuristic_identify_plant_image(image_bytes, filename="plant_upload.jpg", cus
 
     # 2. Match by visual botanical color distribution
     if not best_match:
-        if yr > 0.12 and yr >= gr:
-            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "turmeric"), None)
-        elif er > 0.15 and er >= gr:
-            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "ashwagandha"), None)
-        elif gr > 0.10 and yr > 0.05:
-            # Light green / golden-green berries/fruit (Amla / Amalaki)
+        if "aloe" in fn or "kumari" in fn:
+            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "aloe-vera"), None)
+        elif "amla" in fn or "gooseberry" in fn:
             best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "amla"), None)
-        elif gr > 0.25:
-            # Dark or vibrant leafy foliage (Tulsi, Neem, or Giloy)
+        elif yr > 0.18 and yr >= gr:
+            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "turmeric"), None)
+        elif er > 0.18 and er >= gr:
+            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "ashwagandha"), None)
+        elif gr > 0.28:
+            # Succulent rosette / dark thick leaves (Aloe Vera)
+            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "aloe-vera"), None)
+        elif gr > 0.18:
             best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "neem"), None)
+        elif yr > 0.08 and gr > 0.08:
+            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "amla"), None)
         else:
-            # Default to Amalaki (Indian Gooseberry) or Tulsi
-            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "amla"), None) or AYURVEDIC_BOTANICAL_SIGNATURES[0]
+            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "tulsi"), None) or AYURVEDIC_BOTANICAL_SIGNATURES[0]
 
     return {
         "status": "success",

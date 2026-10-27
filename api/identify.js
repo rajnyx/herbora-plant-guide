@@ -276,7 +276,9 @@ export default async function handler(req) {
       });
     }
 
-    const topSpecies = top.species || {};
+    const top = results[0];
+    const score = top?.score || 0;
+    const topSpecies = top?.species || {};
     const confidence = Math.round(score * 1000) / 10;
 
     const sciName =
@@ -291,8 +293,30 @@ export default async function handler(req) {
     let matchedSlug = BOTANICAL_SYNONYMS[sciLower];
     let matchedSignature = null;
 
-    if (!matchedSlug && sciLower.startsWith('aloe')) matchedSlug = 'aloe-vera';
-    if (!matchedSlug && sciLower.startsWith('ocimum')) matchedSlug = 'tulsi';
+    if (!matchedSlug && (sciLower.startsWith('aloe') || commonNames.some(c => c.toLowerCase().includes('aloe')))) {
+      matchedSlug = 'aloe-vera';
+      matchedSignature = AYURVEDIC_SIGNATURES.find(s => s.slug === 'aloe-vera');
+    }
+    if (!matchedSlug && (sciLower.startsWith('ocimum') || commonNames.some(c => c.toLowerCase().includes('basil') || c.toLowerCase().includes('tulsi')))) {
+      matchedSlug = 'tulsi';
+      matchedSignature = AYURVEDIC_SIGNATURES.find(s => s.slug === 'tulsi');
+    }
+    if (!matchedSlug && (sciLower.startsWith('azadirachta') || commonNames.some(c => c.toLowerCase().includes('neem')))) {
+      matchedSlug = 'neem';
+      matchedSignature = AYURVEDIC_SIGNATURES.find(s => s.slug === 'neem');
+    }
+    if (!matchedSlug && (sciLower.startsWith('curcuma') || commonNames.some(c => c.toLowerCase().includes('turmeric')))) {
+      matchedSlug = 'turmeric';
+      matchedSignature = AYURVEDIC_SIGNATURES.find(s => s.slug === 'turmeric');
+    }
+    if (!matchedSlug && (sciLower.startsWith('withania') || commonNames.some(c => c.toLowerCase().includes('ashwagandha')))) {
+      matchedSlug = 'ashwagandha';
+      matchedSignature = AYURVEDIC_SIGNATURES.find(s => s.slug === 'ashwagandha');
+    }
+    if (!matchedSlug && (sciLower.startsWith('phyllanthus') || commonNames.some(c => c.toLowerCase().includes('gooseberry') || c.toLowerCase().includes('amla')))) {
+      matchedSlug = 'amla';
+      matchedSignature = AYURVEDIC_SIGNATURES.find(s => s.slug === 'amla');
+    }
 
     if (!matchedSlug) {
       for (const sig of AYURVEDIC_SIGNATURES) {

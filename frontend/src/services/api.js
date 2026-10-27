@@ -2056,19 +2056,34 @@ export function heuristicIdentifyPlant(features, filename = '') {
   const yr = features?.yellowRatio || 0.1;
   const er = features?.earthRatio || 0.1;
 
-  if (yr > 0.12 && yr >= gr) {
-    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "turmeric");
-  } else if (er > 0.15 && er >= gr) {
-    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "ashwagandha");
-  } else if (gr > 0.10 && yr > 0.05) {
-    // Light green / golden-green berries/fruit (Amla / Amalaki)
+  if (nameLower.includes('aloe') || nameLower.includes('kumari')) {
+    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "aloe-vera");
+  } else if (nameLower.includes('amla') || nameLower.includes('gooseberry') || nameLower.includes('amalaki')) {
     best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "amla");
-  } else if (gr > 0.25) {
-    // Vibrant or deep foliage (Neem, Tulsi, or Giloy)
+  } else if (nameLower.includes('tulsi') || nameLower.includes('basil')) {
+    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "tulsi");
+  } else if (nameLower.includes('neem')) {
     best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "neem");
+  } else if (nameLower.includes('turmeric') || nameLower.includes('haldi')) {
+    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "turmeric");
+  } else if (nameLower.includes('ashwagandha')) {
+    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "ashwagandha");
+  } else if (yr > 0.18 && yr >= gr) {
+    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "turmeric");
+  } else if (er > 0.18 && er >= gr) {
+    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "ashwagandha");
+  } else if (gr > 0.28) {
+    // Distinct succulent thick foliage (Aloe Vera)
+    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "aloe-vera");
+  } else if (gr > 0.18) {
+    // Fresh leafy green canopy (Neem)
+    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "neem");
+  } else if (yr > 0.08 && gr > 0.08) {
+    // Round light-green berries (Amla)
+    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "amla");
   } else {
-    // Default to Amalaki (Indian Gooseberry) or Tulsi
-    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "amla") || AYURVEDIC_BOTANICAL_SIGNATURES[0];
+    // Default to revered Tulsi
+    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "tulsi") || AYURVEDIC_BOTANICAL_SIGNATURES[0];
   }
 
   const matchedPlant = best ? (FALLBACK_PLANTS.find((p) => p.slug === best.slug) || null) : null;
