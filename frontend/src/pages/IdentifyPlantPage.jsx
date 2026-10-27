@@ -77,12 +77,17 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
 
     setIsProcessing(true);
     setErrorMsg('');
+    setResult(null);
 
     try {
       const data = await identifyPlantImage(selectedFile, activeHint, currentUser?.id, 'auto');
+      if (data && data.status === 'error') {
+        throw new Error(data.message || data.error || 'No plant detected in this image.');
+      }
       setResult(data);
     } catch (err) {
-      setErrorMsg(err.message || 'Plant identification service encountered an error. Please try again.');
+      setResult(null);
+      setErrorMsg(err.message || 'We could not detect a valid plant specimen in this image. Please upload a clear photo of a leaf or flower.');
     } finally {
       setIsProcessing(false);
     }
@@ -166,8 +171,6 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
                     e.target.onerror = null;
                     if (activeHint) {
                       e.target.src = `/assets/${activeHint}.jpg`;
-                    } else {
-                      e.target.src = '/assets/tulsi.jpg';
                     }
                   }}
                 />
@@ -357,6 +360,42 @@ export default function IdentifyPlantPage({ currentUser, onSelectPlant }) {
               <p className="text-[11px] text-[#637869] italic leading-tight">
                 {result.disclaimer}
               </p>
+            </div>
+          ) : errorMsg ? (
+            /* No Plant Detected Error Card */
+            <div className="bg-[#FFF8F7] border border-[#F5C2BC] rounded-3xl p-7 text-center text-[#842029] space-y-4 shadow-sm herbora-rise">
+              <div className="w-16 h-16 rounded-2xl bg-[#FDE8E6] text-[#C0392B] flex items-center justify-center mx-auto">
+                <AlertTriangle className="w-8 h-8 text-[#C0392B]" />
+              </div>
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-[#C0392B] block mb-1">
+                  {isHindi ? 'पहचान विफल' : 'Identification Failed'}
+                </span>
+                <h3 className="font-serif text-2xl font-bold text-[#842029]">
+                  {isHindi ? 'कोई पौधा नहीं पहचाना गया' : 'No Plant Detected'}
+                </h3>
+              </div>
+              <p className="text-xs leading-relaxed max-w-sm mx-auto text-[#721C24]">
+                {errorMsg}
+              </p>
+              <div className="p-4 rounded-2xl bg-white border border-[#F5C2BC] text-left text-xs space-y-2 shadow-3xs">
+                <p className="font-bold text-[#113E21] text-[11px] uppercase tracking-wider">
+                  {isHindi ? 'सटीक परिणाम के लिए सुझाव:' : 'Tips for Accurate Botanical Identification:'}
+                </p>
+                <ul className="space-y-1.5 text-[11px] list-disc list-inside text-[#334D3D] leading-relaxed">
+                  <li>{isHindi ? 'पत्ती, फूल, फल या तने की स्पष्ट और केंद्रित तस्वीर लें' : 'Upload a real leaf, flower, fruit, or stem in clear natural lighting'}</li>
+                  <li>{isHindi ? 'लोगो, टेक्स्ट, पोस्टर, ग्राफ़िक्स या असंबंधित तस्वीरों से बचें' : 'Avoid graphics, logos, posters, text art, or non-botanical images'}</li>
+                  <li>{isHindi ? 'कैमरे को पौधे के करीब रखकर बारीक बनावट दिखाएं' : 'Capture close-up details showing leaf venation, color, and margins'}</li>
+                </ul>
+              </div>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#113E21] hover:bg-[#1C542E] text-white text-xs font-semibold cursor-pointer transition-all shadow-xs"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>{isHindi ? 'नई तस्वीर चुनें' : 'Upload Different Photo'}</span>
+              </button>
             </div>
           ) : (
             /* Standby Card */

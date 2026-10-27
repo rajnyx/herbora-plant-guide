@@ -20,8 +20,14 @@ export default function AboutPage() {
 
     setLoading(true);
     try {
-      await submitUserFeedback(rating, feedbackMsg, senderEmail, senderName);
-      setLastFeedback({ rating, message: feedbackMsg, email: senderEmail, name: senderName });
+      const res = await submitUserFeedback(rating, feedbackMsg, senderEmail, senderName);
+      setLastFeedback({ 
+        rating, 
+        message: feedbackMsg, 
+        email: senderEmail, 
+        name: senderName,
+        activationRequired: res?.activationRequired 
+      });
       setSubmitted(true);
       setFeedbackMsg('');
     } catch (err) {
@@ -137,17 +143,21 @@ export default function AboutPage() {
               <h3 className="font-serif text-lg font-bold text-[#113E21]">
                 {isHindi ? 'प्रतिक्रिया सफलतापूर्वक भेज दी गई है!' : 'Feedback Sent Successfully!'}
               </h3>
-              <p className="text-xs text-[#285D36] mt-1 max-w-md mx-auto">
-                {isHindi 
-                  ? 'आपकी प्रतिक्रिया सीधे rajsingh2007.rs@gmail.com पर भेज दी गई है। हर्बोरा को बेहतर बनाने के लिए धन्यवाद!'
-                  : 'Your feedback has been submitted for rajsingh2007.rs@gmail.com. Thank you for helping us improve Herbora!'}
+              <p className="text-xs text-[#285D36] mt-1 max-w-md mx-auto leading-relaxed">
+                {lastFeedback?.activationRequired
+                  ? (isHindi
+                      ? 'आपकी प्रतिक्रिया दर्ज कर ली गई है और टीम हर्बोरा को ईमेल भेज दिया गया है। हर्बोरा को बेहतर बनाने के लिए धन्यवाद!'
+                      : 'Email sent to Team Herbora. Thank you for helping us improve Herbora!')
+                  : (isHindi 
+                      ? 'आपकी प्रतिक्रिया सीधे टीम हर्बोरा को भेज दी गई है। हर्बोरा को बेहतर बनाने के लिए धन्यवाद!'
+                      : 'Your feedback has been sent to Team Herbora. Thank you for helping us improve Herbora!')}
               </p>
             </div>
 
             {/* Direct Mailto Fallback Action */}
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
               <a
-                href={`mailto:rajsingh2007.rs@gmail.com?subject=${encodeURIComponent(`[Herbora Feedback] ${lastFeedback?.rating || 5}/5 Stars`)}&body=${encodeURIComponent(`Rating: ${lastFeedback?.rating || 5}/5 Stars\nSubmitted by: ${lastFeedback?.name || 'Herbora User'} ${lastFeedback?.email ? `(${lastFeedback.email})` : ''}\n\nFeedback:\n${lastFeedback?.message || ''}`)}`}
+                href={`mailto:team@herbora.app?subject=${encodeURIComponent(`[Herbora Feedback] ${lastFeedback?.rating || 5}/5 Stars`)}&body=${encodeURIComponent(`Rating: ${lastFeedback?.rating || 5}/5 Stars\nSubmitted by: ${lastFeedback?.name || 'Herbora User'} ${lastFeedback?.email ? `(${lastFeedback.email})` : ''}\n\nFeedback:\n${lastFeedback?.message || ''}`)}`}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-[#BBDDC3] text-[#113E21] hover:bg-[#E2ECD5] text-xs font-semibold transition-all cursor-pointer"
                 title="Open in your default email client"
               >
@@ -230,12 +240,12 @@ export default function AboutPage() {
               <Send className="w-4 h-4" />
               <span>
                 {loading 
-                  ? (isHindi ? 'भेजा जा रहा है...' : 'Sending to rajsingh2007.rs@gmail.com...') 
+                  ? (isHindi ? 'टीम हर्बोरा को भेजा जा रहा है...' : 'Sending to Team Herbora...') 
                   : (isHindi ? 'प्रतिक्रिया भेजें' : 'Send Feedback')}
               </span>
             </button>
             <p className="text-[11px] text-center text-[#556B5D]">
-              {isHindi ? 'प्रतिक्रिया सीधे rajsingh2007.rs@gmail.com पर प्रेषित की जाती है' : 'Feedback is delivered to rajsingh2007.rs@gmail.com'}
+              {isHindi ? 'प्रतिक्रिया सीधे टीम हर्बोरा को प्रेषित की जाती है' : 'Feedback is securely sent to Team Herbora'}
             </p>
           </form>
         )}

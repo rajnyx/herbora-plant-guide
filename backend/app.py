@@ -333,10 +333,14 @@ def seed_initial_data():
             if seeded_count > 0:
                 print(f"Successfully seeded {seeded_count} Ayurvedic plants into Herbora database!")
 
-        # Idempotently synchronize / enrich with the 360 Amidha Ayurveda dataset records
+        # Idempotently synchronize / enrich with the 360 Amidha Ayurveda dataset records if needed
         try:
-            from import_dataset import import_amidha_dataset
-            import_amidha_dataset()
+            total_plants = db.query(Plant).count()
+            if total_plants < 360:
+                from import_dataset import import_amidha_dataset
+                import_amidha_dataset()
+            else:
+                print(f"Herbora database already initialized with {total_plants} botanical monographs.")
         except Exception as ds_err:
             print(f"Notice: Dataset synchronization note: {ds_err}")
     except Exception as e:

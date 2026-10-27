@@ -120,7 +120,7 @@ export default function App() {
         return;
       }
 
-      await savePlantToDb(plantId, currentUser.id);
+      await savePlantToDb(plant, currentUser.id);
       setSavedPlantIds(new Set([...savedPlantIds, plantId, plant.slug]));
       const refreshed = await fetchMySavedPlants(currentUser.id);
       setSavedPlants(refreshed);
@@ -134,15 +134,22 @@ export default function App() {
     if (!currentUser) return;
     try {
       await removePlantFromDb(plantId, currentUser.id);
-      const updated = savedPlants.filter(
-        (p) => (p.plant?.id !== plantId && p.plant?.slug !== plantId && p.plant_id !== plantId)
-      );
+      const cleanId = String(plantId).replace('plant-', '');
+      const updated = savedPlants.filter((p) => {
+        const itemPlant = p.plant || p;
+        const itemId = itemPlant.id || p.plant_id || p.id;
+        const itemSlug = itemPlant.slug || p.slug;
+        if (itemPlant.common_name === 'Saved Plant') return false;
+        return itemId !== plantId && itemSlug !== plantId && itemId !== cleanId && itemSlug !== cleanId;
+      });
       setSavedPlants(updated);
       const newIds = new Set();
       updated.forEach((item) => {
+        const itemPlant = item.plant || item;
         if (item.plant_id) newIds.add(item.plant_id);
-        if (item.plant?.id) newIds.add(item.plant.id);
-        if (item.plant?.slug) newIds.add(item.plant.slug);
+        if (itemPlant.id) newIds.add(itemPlant.id);
+        if (itemPlant.slug) newIds.add(itemPlant.slug);
+        if (item.id) newIds.add(item.id);
       });
       setSavedPlantIds(newIds);
       showToast('Removed from My Plant DB');

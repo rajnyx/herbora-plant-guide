@@ -18,7 +18,7 @@ function herbauraDevApiPlugin() {
         let isFlaskRunning = false;
         try {
           const ctrl = new AbortController();
-          const tid = setTimeout(() => ctrl.abort(), 180);
+          const tid = setTimeout(() => ctrl.abort(), 1500);
           const chk = await fetch('http://127.0.0.1:5000/api/health', { signal: ctrl.signal });
           clearTimeout(tid);
           isFlaskRunning = chk.ok;
@@ -60,10 +60,34 @@ function herbauraDevApiPlugin() {
               body: buffer
             });
 
-            const text = await pnetRes.text();
-            res.statusCode = pnetRes.status;
+            if (!pnetRes.ok) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                status: 'error',
+                error: 'No plant detected',
+                message: 'We could not detect a valid plant, leaf, or flower in this image. Please upload a clear photo of a real plant specimen.',
+                is_not_plant: true
+              }));
+              return;
+            }
+
+            const pnetData = await pnetRes.json();
+            if (!pnetData.results || pnetData.results.length === 0 || (pnetData.results[0]?.score || 0) < 0.06) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                status: 'error',
+                error: 'No plant detected',
+                message: 'We could not detect a valid plant, leaf, or flower in this image. Please upload a clear photo of a real plant specimen.',
+                is_not_plant: true
+              }));
+              return;
+            }
+
+            res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(text);
+            res.end(JSON.stringify(pnetData));
             return;
           } catch (err) {
             res.statusCode = 500;
@@ -87,6 +111,7 @@ export default defineConfig({
   ],
   publicDir: path.resolve(import.meta.dirname || '.', 'public'),
   server: {
+    host: '0.0.0.0',
     port: 5173,
     proxy: {
       '/api': {

@@ -227,30 +227,33 @@ export default async function handler(req) {
     }
 
     if (results.length === 0) {
-      // Graceful Ayurvedic botanical fallback
-      const defSig = AYURVEDIC_SIGNATURES[0]; // Tulsi
       return new Response(
         JSON.stringify({
-          status: 'success',
-          source: 'botanical_vision_heuristic',
-          predicted_name: defSig.common_name,
-          scientific_name: defSig.scientific_name,
-          ayurvedic_name: defSig.ayurvedic_name,
-          slug: defSig.slug,
-          category: defSig.category,
-          confidence_score: 75.0,
-          botanical_traits: defSig.traits,
-          matched_plant_slug: defSig.slug,
-          is_heuristic_estimation: true,
-          disclaimer: 'AI Botanical Vision Estimation: Herbora identified the closest Ayurvedic medicinal match. Upload a clear close-up of a single leaf or flower for 90%+ confirmation.'
+          status: 'error',
+          error: 'No plant detected',
+          message: 'We could not detect a valid plant, leaf, or flower in this image. Please upload a clear photo of a real plant specimen.',
+          is_not_plant: true
         }),
-        { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
       );
     }
 
     const top = results[0];
-    const topSpecies = top.species || {};
     const score = top.score || 0;
+
+    if (score < 0.06) {
+      return new Response(
+        JSON.stringify({
+          status: 'error',
+          error: 'No confident plant match',
+          message: 'The uploaded image does not appear to contain recognizable botanical features. Please upload a closer, well-lit photo of a leaf or flower.',
+          is_not_plant: true
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      );
+    }
+
+    const topSpecies = top.species || {};
     const confidence = Math.round(score * 1000) / 10;
 
     const sciName =

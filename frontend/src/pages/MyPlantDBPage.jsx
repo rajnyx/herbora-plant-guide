@@ -2,6 +2,7 @@ import React from 'react';
 import { Bookmark, Trash2, ArrowRight, BookOpen, LogIn, Sprout } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { getPlantImageUrl } from '../services/api';
+import { BotanicalCardImage } from './PlantopediaPage';
 
 export default function MyPlantDBPage({
   currentUser,
@@ -47,6 +48,12 @@ export default function MyPlantDBPage({
     );
   }
 
+  // Filter out any invalid/corrupted placeholder records
+  const validSavedPlants = (savedPlants || []).filter((item) => {
+    const raw = item?.plant || item;
+    return raw && raw.common_name && raw.common_name !== 'Saved Plant';
+  });
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
       {/* Page Header */}
@@ -72,7 +79,7 @@ export default function MyPlantDBPage({
       </div>
 
       {/* Empty State for authenticated users with 0 saved plants */}
-      {savedPlants.length === 0 ? (
+      {validSavedPlants.length === 0 ? (
         <div className="py-16 text-center bg-[#FFFDF8] border border-[#DDD6C3] rounded-3xl p-8 sm:p-12 max-w-xl mx-auto herbora-rise">
           <div className="w-16 h-16 rounded-2xl bg-[#E2ECD5] flex items-center justify-center mx-auto mb-4 text-[#113E21]">
             <Sprout className="w-8 h-8" />
@@ -94,9 +101,10 @@ export default function MyPlantDBPage({
       ) : (
         /* Grid of Saved Plants */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {savedPlants.map((item) => {
+          {validSavedPlants.map((item) => {
             const rawPlant = item.plant || item;
             const plant = localizePlant(rawPlant);
+            const removeId = item.plant_id || plant.id || plant.slug || item.id;
             return (
               <div
                 key={item.id || plant.id || plant.slug}
@@ -109,7 +117,7 @@ export default function MyPlantDBPage({
                       {localizeCategory(plant.category) || 'Herb'}
                     </span>
                     <button
-                      onClick={() => onRemovePlant(plant.id || plant.slug)}
+                      onClick={() => onRemovePlant(removeId)}
                       className="p-1.5 rounded-lg border border-[#F5C2BC] bg-[#FDF2F0] text-[#9E2B25] hover:bg-[#FBE7E5] transition-colors cursor-pointer"
                       title={t('myPlants.removeBtn', 'Remove from My Plant DB')}
                     >
@@ -118,22 +126,7 @@ export default function MyPlantDBPage({
                   </div>
 
                   {/* Thumbnail Image */}
-                  <div className="w-full h-44 rounded-xl overflow-hidden mb-4 border border-[#E2DDD0] bg-[#F7F4EA] relative">
-                    <img 
-                      src={getPlantImageUrl(plant)} 
-                      alt={plant.common_name} 
-                      className="w-full h-full object-cover object-center"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        const fallback = getPlantImageUrl(plant);
-                        if (fallback && e.currentTarget.src !== fallback) {
-                          e.currentTarget.src = fallback;
-                        } else {
-                          e.currentTarget.src = '/assets/botanical_canvas.jpg';
-                        }
-                      }}
-                    />
-                  </div>
+                  <BotanicalCardImage plant={plant} />
 
                   {/* Titles */}
                   <h2 className="font-serif text-2xl font-bold text-[#174B2B] leading-tight">

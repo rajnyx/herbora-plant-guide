@@ -269,9 +269,23 @@ def identify_via_plantnet(image_bytes, filename="plant.jpg"):
             # Pl@ntNet auto organ classifier often returns 404 when ambiguous; retry with leaf organ
             response = requests.post(url, files=[('images', (filename, image_bytes, content_type))], data={'organs': ['leaf']}, timeout=15)
 
+        if response.status_code == 404:
+            # Pl@ntNet specifically returns 404 when no plant species or recognizable botanical organ is found
+            return {
+                "status": "error",
+                "error": "No plant detected",
+                "message": "We could not detect a valid plant, leaf, or flower in this image. Please upload a clear photo of a real plant specimen.",
+                "is_not_plant": True
+            }
+
         if response.status_code != 200:
             print(f"[Pl@ntNet API] Request failed with status {response.status_code}: {response.text[:200]}")
-            return None
+            return {
+                "status": "error",
+                "error": "Botanical vision error",
+                "message": "Unable to verify plant species from this image. Please upload a clear, focused photo of a leaf or flower.",
+                "is_not_plant": True
+            }
 
         res_data = response.json()
         results = res_data.get("results", [])
@@ -280,12 +294,28 @@ def identify_via_plantnet(image_bytes, filename="plant.jpg"):
             response = requests.post(url, files=[('images', (filename, image_bytes, content_type))], data={'organs': ['flower']}, timeout=15)
             if response.status_code == 200:
                 results = response.json().get("results", [])
+
         if not results:
-            return None
+            return {
+                "status": "error",
+                "error": "No plant detected",
+                "message": "We could not detect a valid plant, leaf, or flower in this image. Please upload a clear photo of a real plant specimen.",
+                "is_not_plant": True
+            }
 
         top_match = results[0]
-        top_species = top_match.get("species", {})
         score = top_match.get("score", 0)
+
+        # Confidence threshold: below 6% means Pl@ntNet did not find any plausible plant match
+        if score < 0.06:
+            return {
+                "status": "error",
+                "error": "No confident plant match",
+                "message": "The uploaded image does not appear to contain recognizable botanical features. Please upload a closer, well-lit photo of a leaf or flower.",
+                "is_not_plant": True
+            }
+
+        top_species = top_match.get("species", {})
         confidence = round(score * 100, 1)
 
         sci_name = top_species.get("scientificNameWithoutAuthor", top_species.get("scientificName", "Unknown plant"))
@@ -352,74 +382,66 @@ def identify_via_plantnet(image_bytes, filename="plant.jpg"):
 
 def heuristic_identify_plant_image(image_bytes, filename="plant_upload.jpg", custom_hint=None):
     """
-    Fallback plant identification using local botanical heuristics and image color metrics.
+    Fallback plant identification using local botanical heuristics.
+    Strictly verifies plant vegetation cues and refuses non-plant images.
     """
-    features = analyze_image_features(image_bytes) if image_bytes else {
-        "green_ratio": 0.5, "yellow_ratio": 0.1, "earth_ratio": 0.1, "width": 200, "height": 200
-    }
-    
     hint_lower = (custom_hint or filename or "").lower()
-    best_candidate = None
 
-    for plant in AYURVEDIC_BOTANICAL_SIGNATURES:
-        if plant["slug"] in hint_lower or plant["common_name"].lower() in hint_lower or plant["ayurvedic_name"].lower() in hint_lower:
-            best_candidate = plant
-            confidence = round(random.uniform(92.5, 98.4), 1)
-            break
+    # 1. Preset sample herb match (when clicked from UI sample buttons)
+    if custom_hint:
+        for plant in AYURVEDIC_BOTANICAL_SIGNATURES:
+            if plant["slug"] in hint_lower or plant["common_name"].lower() in hint_lower or plant["ayurvedic_name"].lower() in hint_lower:
+                return {
+                    "status": "success",
+                    "source": "sample_preset",
+                    "predicted_name": plant["common_name"],
+                    "scientific_name": plant["scientific_name"],
+                    "ayurvedic_name": plant["ayurvedic_name"],
+                    "slug": plant["slug"],
+                    "category": plant["category"],
+                    "confidence_score": 96.5,
+                    "botanical_traits": plant["traits"],
+                    "matched_plant_slug": plant["slug"],
+                    "disclaimer": "Verified botanical sample from classical Ayurvedic corpus."
+                }
 
-    if not best_candidate:
-        if features["yellow_ratio"] > 0.25:
-            best_candidate = next(p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "turmeric")
-            confidence = round(random.uniform(86.0, 93.5), 1)
-        elif features["earth_ratio"] > 0.3:
-            best_candidate = next(p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "ashwagandha")
-            confidence = round(random.uniform(84.0, 91.0), 1)
-        elif features["green_ratio"] > 0.6:
-            options = [p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] in ["tulsi", "neem", "brahmi", "aloe-vera", "giloy"]]
-            best_candidate = random.choice(options)
-            confidence = round(random.uniform(87.0, 95.8), 1)
-        else:
-            best_candidate = random.choice(AYURVEDIC_BOTANICAL_SIGNATURES)
-            confidence = round(random.uniform(81.0, 89.5), 1)
+    features = analyze_image_features(image_bytes) if image_bytes else {
+        "green_ratio": 0.0, "yellow_ratio": 0.0, "earth_ratio": 0.0, "width": 200, "height": 200
+    }
 
-    alternatives = [p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] != best_candidate["slug"]]
-    alt_match = random.choice(alternatives)
-    alt_confidence = round(100.0 - confidence - random.uniform(2.0, 5.0), 1)
+    # Strict botanical verification: non-plants lack natural vegetation pigments
+    if features["green_ratio"] < 0.08 and features["yellow_ratio"] < 0.08 and features["earth_ratio"] < 0.08:
+        return {
+            "status": "error",
+            "error": "No plant detected",
+            "message": "We could not detect clear botanical features (leaves, flowers, or medicinal roots) in this photo. Please upload a clear photo of a real plant specimen.",
+            "is_not_plant": True
+        }
 
+    # If image does not match any known botanical sample and lacks strong confidence, return error
     return {
-        "status": "success",
-        "source": "botanical_heuristic",
-        "predicted_name": best_candidate["common_name"],
-        "scientific_name": best_candidate["scientific_name"],
-        "ayurvedic_name": best_candidate["ayurvedic_name"],
-        "slug": best_candidate["slug"],
-        "category": best_candidate["category"],
-        "confidence_score": confidence,
-        "botanical_traits": best_candidate["traits"],
-        "image_features": {
-            "green_density": f"{int(features['green_ratio'] * 100)}%",
-            "dimensions": f"{features['width']}x{features['height']}px"
-        },
-        "secondary_prediction": {
-            "common_name": alt_match["common_name"],
-            "scientific_name": alt_match["scientific_name"],
-            "confidence_score": max(5.0, alt_confidence)
-        },
-        "matched_plant_slug": best_candidate["slug"],
-        "disclaimer": "AI identification is educational assistance only. Always verify botanical identity before culinary or medicinal use."
+        "status": "error",
+        "error": "Unrecognized specimen",
+        "message": "The photo does not appear to contain recognizable medicinal plant foliage. Please upload a close-up photo of a leaf, flower, or stem in good lighting.",
+        "is_not_plant": True
     }
 
 def identify_plant_image(image_bytes, filename="plant_upload.jpg", custom_hint=None):
     """
     Main identification entry point.
-    1. Tries Pl@ntNet API when real image data is present.
-    2. Seamlessly falls back to heuristic engine on errors, rate limits, or empty uploads.
+    1. If user clicked a verified sample herb, returns the preset match.
+    2. Runs Pl@ntNet API when real image bytes are present.
+    3. If image is not a plant, returns a clear error instead of faking a match.
     """
-    # 1. Try Pl@ntNet API if image bytes are provided
+    # 1. Quick test sample presets
+    if custom_hint and any(p["slug"] in custom_hint.lower() for p in AYURVEDIC_BOTANICAL_SIGNATURES):
+        return heuristic_identify_plant_image(image_bytes, filename=filename, custom_hint=custom_hint)
+
+    # 2. Try Pl@ntNet API if image bytes are provided
     if image_bytes and len(image_bytes) > 100:
         plantnet_result = identify_via_plantnet(image_bytes, filename=filename)
-        if plantnet_result:
+        if plantnet_result is not None:
             return plantnet_result
 
-    # 2. Fall back to internal botanical heuristic
+    # 3. Fall back to internal botanical heuristic (checks vegetation features, errors on non-plants)
     return heuristic_identify_plant_image(image_bytes, filename=filename, custom_hint=custom_hint)

@@ -113,19 +113,16 @@ export default function PlantDetailModal({
 
             {/* Thumbnail Image */}
             <div className="md:col-span-4 flex justify-center">
-              <div className="w-40 h-40 rounded-2xl overflow-hidden border border-[#DDD6C3] shadow-inner bg-[#F7F4EA]">
+              <div className="w-40 h-40 rounded-2xl overflow-hidden border border-[#DDD6C3] shadow-inner bg-[#F7F4EA] relative flex items-center justify-center">
                 <img 
-                  src={getPlantImageUrl(plant)} 
+                  src={getPlantImageUrl(plant, 500)} 
                   alt={plant.common_name} 
                   className="w-full h-full object-cover object-center"
+                  loading="lazy"
+                  decoding="async"
                   onError={(e) => {
                     e.currentTarget.onerror = null;
-                    const fallback = getPlantImageUrl(plant);
-                    if (fallback && e.currentTarget.src !== fallback) {
-                      e.currentTarget.src = fallback;
-                    } else {
-                      e.currentTarget.src = '/assets/botanical_canvas.jpg';
-                    }
+                    e.currentTarget.src = '/assets/botanical_canvas.jpg';
                   }}
                 />
               </div>

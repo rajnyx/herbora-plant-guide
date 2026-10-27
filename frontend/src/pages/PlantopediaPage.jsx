@@ -159,6 +159,54 @@ export function doesPlantMatchCategory(plant, selectedCategory) {
   return catDef.keywords.some((kw) => corpus.includes(kw));
 }
 
+export function BotanicalCardImage({ 
+  plant, 
+  className = "w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500",
+  containerClassName = "w-full h-44 rounded-xl overflow-hidden mb-4 border border-[#DDD6C3] bg-[#F4EFE6] relative flex items-center justify-center"
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [imgSrc, setImgSrc] = useState(() => getPlantImageUrl(plant, 500));
+
+  useEffect(() => {
+    setImgSrc(getPlantImageUrl(plant, 500));
+    setLoaded(false);
+  }, [plant?.id, plant?.slug, plant?.image_url]);
+
+  return (
+    <div className={containerClassName}>
+      {/* Botanical placeholder shimmer pulse while loading */}
+      {!loaded && (
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F4EFE6] via-[#EAE3D2] to-[#F4EFE6] animate-pulse pointer-events-none" />
+      )}
+      <img 
+        ref={(el) => {
+          if (el && el.complete && el.naturalWidth > 0 && !loaded) {
+            setLoaded(true);
+          }
+        }}
+        src={imgSrc} 
+        alt={plant?.common_name || 'Botanical herb'} 
+        className={`${className} transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        onError={() => {
+          if (imgSrc && imgSrc.includes('/thumb/')) {
+            // Tier 1 fallback: attempt raw Wikimedia original if thumb is 404
+            const raw = imgSrc.replace(/\/thumb\/([a-zA-Z0-9_-]+)\/([^/]+)\/([a-zA-Z0-9_-]+)\/\d+px-[^/?#]+/, '/$1/$2/$3');
+            if (raw !== imgSrc) {
+              setImgSrc(raw);
+              return;
+            }
+          }
+          setImgSrc('/assets/botanical_canvas.jpg');
+          setLoaded(true);
+        }}
+      />
+    </div>
+  );
+}
+
 export default function PlantopediaPage({ 
   initialSearch = '', 
   onSelectPlant, 
@@ -559,23 +607,7 @@ export default function PlantopediaPage({
                   </div>
 
                   {/* Plant Image */}
-                  <div className="w-full h-44 rounded-xl overflow-hidden mb-4 border border-[#DDD6C3] bg-[#F7F4EA] relative">
-                    <img 
-                      src={getPlantImageUrl(plant)} 
-                      alt={plant.common_name} 
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        const fallback = getPlantImageUrl(plant);
-                        if (fallback && e.currentTarget.src !== fallback) {
-                          e.currentTarget.src = fallback;
-                        } else {
-                          e.currentTarget.src = '/assets/botanical_canvas.jpg';
-                        }
-                      }}
-                    />
-                  </div>
+                  <BotanicalCardImage plant={plant} />
 
                   {/* Names */}
                   <h2 className="font-serif text-2xl font-bold text-[#113E21] leading-tight">

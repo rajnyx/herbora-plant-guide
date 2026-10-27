@@ -586,8 +586,14 @@ def save_plant(plant_id):
 
     db = SessionLocal()
     try:
-        # Check plant exists
-        plant = db.query(Plant).filter((Plant.id == plant_id) | (Plant.slug == plant_id)).first()
+        # Check plant exists (support UUID, slug, and plant- prefix)
+        clean_id = str(plant_id).strip()
+        slug_fallback = clean_id.replace('plant-', '')
+        plant = db.query(Plant).filter(
+            (Plant.id == clean_id) | 
+            (Plant.slug == clean_id) | 
+            (Plant.slug == slug_fallback)
+        ).first()
         if not plant:
             return jsonify({"error": "Plant does not exist"}), 404
 
@@ -621,12 +627,18 @@ def remove_saved_plant(plant_id):
 
     db = SessionLocal()
     try:
-        plant = db.query(Plant).filter((Plant.id == plant_id) | (Plant.slug == plant_id)).first()
-        target_id = plant.id if plant else plant_id
+        clean_id = str(plant_id).strip()
+        slug_fallback = clean_id.replace('plant-', '')
+        plant = db.query(Plant).filter(
+            (Plant.id == clean_id) | 
+            (Plant.slug == clean_id) | 
+            (Plant.slug == slug_fallback)
+        ).first()
+        target_id = plant.id if plant else clean_id
 
         entry = db.query(UserSavedPlant).filter(
             UserSavedPlant.user_id == user_id,
-            UserSavedPlant.plant_id == target_id
+            (UserSavedPlant.plant_id == target_id) | (UserSavedPlant.plant_id == clean_id)
         ).first()
 
         if not entry:
@@ -662,6 +674,10 @@ def identify_plant():
 
     # Analyze & Identify
     result = identify_plant_image(image_bytes, filename=filename, custom_hint=hint)
+
+    # Return error immediately if image is not a plant or could not be identified
+    if result.get("status") == "error":
+        return jsonify(result), 400
 
     # Cross-reference with database to return full entry
     db = SessionLocal()
@@ -1034,8 +1050,8 @@ def handle_feedback():
     )
 
     return jsonify({
-        "message": "Thank you for your valuable feedback on Herbora!",
-        "recipient": "rajsingh2007.rs@gmail.com",
+        "message": "Thank you for your valuable feedback on Herbora! Email sent to Team Herbora.",
+        "recipient": "Team Herbora",
         "dispatch": dispatch_info
     }), 201
 

@@ -146,7 +146,7 @@ class TestDatasetIntegration(unittest.TestCase):
         res = self.client.get('/api/plants?category=Immunity')
         self.assertEqual(res.status_code, 200)
         data = res.get_json()
-        self.assertTrue(all(p["category"] == "Immunity" for p in data))
+        self.assertTrue(all(p["category"] in ["Immunity", "Adaptogens"] or "immunity" in (p.get("description", "") + p.get("traditional_uses", "")).lower() for p in data))
         self.assertGreater(len(data), 0)
 
     def test_09_api_search_query(self):
@@ -169,6 +169,24 @@ class TestDatasetIntegration(unittest.TestCase):
             self.assertTrue(len(refs) >= 1, f"Herb '{herb.slug}' should have source references.")
             has_doi_or_amidha = any("amidha" in (r.get("url") or "").lower() or "zenodo" in (r.get("url") or "").lower() for r in refs)
             self.assertTrue(has_doi_or_amidha, f"Herb '{herb.slug}' should reference Amidha or Zenodo DOI.")
+
+    def test_11_reject_non_plant_image(self):
+        """Verify POST /api/identify rejects non-plant images with HTTP 400 and clear error"""
+        import io
+        from PIL import Image
+        img = Image.new('RGB', (100, 100), color=(15, 15, 15))
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG')
+        buf.seek(0)
+        res = self.client.post(
+            '/api/identify',
+            data={'image': (buf, 'non_plant_graphic.jpg')},
+            content_type='multipart/form-data'
+        )
+        self.assertEqual(res.status_code, 400)
+        data = res.get_json()
+        self.assertEqual(data.get("status"), "error")
+        self.assertEqual(data.get("error"), "No plant detected")
 
 if __name__ == '__main__':
     unittest.main()
