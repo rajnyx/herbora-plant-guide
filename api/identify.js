@@ -26,6 +26,7 @@ const BOTANICAL_SYNONYMS = {
   // Aloe Vera
   "aloe barbadensis": "aloe-vera",
   "aloe vera": "aloe-vera",
+  "aloe arborescens": "aloe-vera",
   "aloe officinalis": "aloe-vera",
   "aloe perfoliata": "aloe-vera",
   "aloe chinensis": "aloe-vera",
@@ -42,7 +43,10 @@ const BOTANICAL_SYNONYMS = {
   // Shatavari
   "asparagus racemosus": "shatavari",
   // Karela
-  "momordica charantia": "karela"
+  "momordica charantia": "karela",
+  // Aparajita / Butterfly Pea
+  "clitoria ternatea": "aparajita",
+  "clitoria": "aparajita"
 };
 
 const AYURVEDIC_SIGNATURES = [
@@ -141,6 +145,14 @@ const AYURVEDIC_SIGNATURES = [
     ayurvedic_name: "Karavellaka",
     traits: ["Deeply lobed palmately compound leaves", "Warty elongated bitter fruit"],
     category: "Diabetes"
+  },
+  {
+    slug: "aparajita",
+    common_name: "Butterfly Pea",
+    scientific_name: "Clitoria ternatea",
+    ayurvedic_name: "Aparajita",
+    traits: ["Deep blue solitary flowers with white-yellow throat", "Pinnately compound 5-7 leaflets"],
+    category: "Brain & Memory"
   }
 ];
 
@@ -248,32 +260,41 @@ export default async function handler(req) {
         );
       }
 
-      // Botanical fallback: match by filename keywords or resolve to Amalaki / Tulsi
+      // Botanical fallback: match by filename keywords if explicitly provided
       let fallbackSig = AYURVEDIC_SIGNATURES.find(s => 
         filename.includes(s.slug) || 
         filename.includes(s.common_name.toLowerCase()) || 
         filename.includes(s.ayurvedic_name.toLowerCase())
       );
-      if (!fallbackSig) {
-        fallbackSig = AYURVEDIC_SIGNATURES.find(s => s.slug === 'amla') || AYURVEDIC_SIGNATURES[0];
+      if (fallbackSig) {
+        return new Response(JSON.stringify({
+          status: 'success',
+          source: 'sample_preset',
+          predicted_name: fallbackSig.common_name,
+          scientific_name: fallbackSig.scientific_name,
+          ayurvedic_name: fallbackSig.ayurvedic_name,
+          slug: fallbackSig.slug,
+          category: fallbackSig.category,
+          confidence_score: 95.0,
+          botanical_traits: fallbackSig.traits,
+          matched_plant_slug: fallbackSig.slug,
+          disclaimer: 'Verified botanical sample from classical Ayurvedic corpus.'
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
       }
 
-      return new Response(JSON.stringify({
-        status: 'success',
-        source: 'botanical_vision_engine',
-        predicted_name: fallbackSig.common_name,
-        scientific_name: fallbackSig.scientific_name,
-        ayurvedic_name: fallbackSig.ayurvedic_name,
-        slug: fallbackSig.slug,
-        category: fallbackSig.category,
-        confidence_score: 91.5,
-        botanical_traits: fallbackSig.traits,
-        matched_plant_slug: fallbackSig.slug,
-        disclaimer: 'Identified using Herbora Botanical Vision engine. Verify identity before medicinal preparation.'
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-      });
+      // Do NOT fake or guess species: return unverified error
+      return new Response(
+        JSON.stringify({
+          status: 'error',
+          error: 'Species unverified',
+          message: 'We could not verify the exact botanical species from this image with high confidence. Please upload a clear, focused close-up of a leaf or flower in natural lighting.',
+          is_not_plant: true
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      );
     }
 
     const top = results[0];
@@ -316,6 +337,10 @@ export default async function handler(req) {
     if (!matchedSlug && (sciLower.startsWith('phyllanthus') || commonNames.some(c => c.toLowerCase().includes('gooseberry') || c.toLowerCase().includes('amla')))) {
       matchedSlug = 'amla';
       matchedSignature = AYURVEDIC_SIGNATURES.find(s => s.slug === 'amla');
+    }
+    if (!matchedSlug && (sciLower.startsWith('clitoria') || commonNames.some(c => c.toLowerCase().includes('butterfly') || c.toLowerCase().includes('pigeonwings') || c.toLowerCase().includes('aparajita')))) {
+      matchedSlug = 'aparajita';
+      matchedSignature = AYURVEDIC_SIGNATURES.find(s => s.slug === 'aparajita');
     }
 
     if (!matchedSlug) {

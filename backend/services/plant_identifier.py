@@ -36,6 +36,7 @@ BOTANICAL_SYNONYMS = {
     # Aloe Vera
     "aloe barbadensis": "aloe-vera",
     "aloe vera": "aloe-vera",
+    "aloe arborescens": "aloe-vera",
     "aloe officinalis": "aloe-vera",
     "aloe perfoliata": "aloe-vera",
     "aloe chinensis": "aloe-vera",
@@ -52,7 +53,10 @@ BOTANICAL_SYNONYMS = {
     # Shatavari
     "asparagus racemosus": "shatavari",
     # Karela
-    "momordica charantia": "karela"
+    "momordica charantia": "karela",
+    # Aparajita / Butterfly Pea
+    "clitoria ternatea": "aparajita",
+    "clitoria": "aparajita"
 }
 
 AYURVEDIC_BOTANICAL_SIGNATURES = [
@@ -163,6 +167,15 @@ AYURVEDIC_BOTANICAL_SIGNATURES = [
         "traits": ["Deeply lobed palmately compound leaves", "Warty elongated bitter fruit", "Yellow solitary flowers", "Tendril climber"],
         "color_bias": "deep_green",
         "category": "Diabetes"
+    },
+    {
+        "slug": "aparajita",
+        "common_name": "Butterfly Pea",
+        "scientific_name": "Clitoria ternatea",
+        "ayurvedic_name": "Aparajita",
+        "traits": ["Vibrant deep blue flowers with white-yellow center", "Pinnately compound 5-7 leaflets", "Slender climbing twining stem", "Classical Shankhpushpi medhya herb"],
+        "color_bias": "deep_blue",
+        "category": "Brain & Memory"
     }
 ]
 
@@ -267,6 +280,8 @@ def find_ayurvedic_match(scientific_name, common_names=None):
         return next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "brahmi"), None)
     if sci_clean.startswith("zingiber") or any("ginger" in c for c in c_list):
         return next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "ginger"), None)
+    if sci_clean.startswith("clitoria") or any("butterfly pea" in c or "pigeonwings" in c or "aparajita" in c for c in c_list):
+        return next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "aparajita"), None)
 
     return None
 
@@ -425,38 +440,27 @@ def heuristic_identify_plant_image(image_bytes, filename="plant_upload.jpg", cus
             best_match = p
             break
 
-    # 2. Match by visual botanical color distribution
-    if not best_match:
-        if "aloe" in fn or "kumari" in fn:
-            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "aloe-vera"), None)
-        elif "amla" in fn or "gooseberry" in fn:
-            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "amla"), None)
-        elif yr > 0.18 and yr >= gr:
-            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "turmeric"), None)
-        elif er > 0.18 and er >= gr:
-            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "ashwagandha"), None)
-        elif gr > 0.28:
-            # Succulent rosette / dark thick leaves (Aloe Vera)
-            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "aloe-vera"), None)
-        elif gr > 0.18:
-            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "neem"), None)
-        elif yr > 0.08 and gr > 0.08:
-            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "amla"), None)
-        else:
-            best_match = next((p for p in AYURVEDIC_BOTANICAL_SIGNATURES if p["slug"] == "tulsi"), None) or AYURVEDIC_BOTANICAL_SIGNATURES[0]
+    if best_match:
+        return {
+            "status": "success",
+            "source": "botanical_vision_engine",
+            "predicted_name": best_match["common_name"],
+            "scientific_name": best_match["scientific_name"],
+            "ayurvedic_name": best_match["ayurvedic_name"],
+            "slug": best_match["slug"],
+            "category": best_match["category"],
+            "confidence_score": 92.0,
+            "botanical_traits": best_match["traits"],
+            "matched_plant_slug": best_match["slug"],
+            "disclaimer": "Identified from verified botanical markers. Cross-referenced with Ayurvedic Plantopedia."
+        }
 
+    # Strict botanical integrity: never return fake or guessed identification
     return {
-        "status": "success",
-        "source": "botanical_vision_engine",
-        "predicted_name": best_match["common_name"],
-        "scientific_name": best_match["scientific_name"],
-        "ayurvedic_name": best_match["ayurvedic_name"],
-        "slug": best_match["slug"],
-        "category": best_match["category"],
-        "confidence_score": 89.2,
-        "botanical_traits": best_match["traits"],
-        "matched_plant_slug": best_match["slug"],
-        "disclaimer": "Identified using Herbora Botanical Vision engine. Cross-referenced with Ayurvedic Plantopedia."
+        "status": "error",
+        "error": "Species unverified",
+        "message": "We could not verify the exact botanical species from this image with high confidence. Please upload a clear, focused close-up of a leaf or flower in natural lighting.",
+        "is_not_plant": True
     }
 
 def identify_plant_image(image_bytes, filename="plant_upload.jpg", custom_hint=None):

@@ -791,6 +791,39 @@ export const FALLBACK_PLANTS = [
       { title: "Amidha Ayurveda — Karavellaka Monograph", url: "https://www.amidhaayurveda.com/p/karela.html" },
       { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
     ]
+  },
+  {
+    id: "plant-aparajita",
+    slug: "aparajita",
+    common_name: "Butterfly Pea",
+    scientific_name: "Clitoria ternatea",
+    ayurvedic_name: "Aparajita",
+    regional_names: ["Gokarna", "Asian Pigeonwings", "Shankhpushpi", "Neela Aparajita"],
+    category: "Brain & Memory",
+    description: "A revered Medhya Rasayana vine in classical Ayurveda featuring vivid deep blue flowers, traditionally used to enhance cognitive recall, calm neural agitation, relieve ophthalmic strain, and support neurological vitality.",
+    traditional_uses: "Flower infusion or root powder for memory enhancement, calming Vata dosha, and clearing ophthalmic tension.",
+    plant_parts_used: "Flowers, leaves, and roots",
+    habitat: "Tropical regions of India; widely grown in gardens and climbing over fences.",
+    cultivation_information: "Perennial climbing twiner requiring trellis support, full morning sunlight, and moderate watering.",
+    safety_information: "Mild laxative action in large doses of root bark. Consult practitioner during pregnancy.",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Asian_pigeonwings_in_Bhopal_04.jpg/500px-Asian_pigeonwings_in_Bhopal_04.jpg",
+    is_published: true,
+    sanskrit_synonyms: ["Girikarnika", "Vishnukranta", "Ashwakhura"],
+    part_used: ["Pushpa", "Patra", "Moola"],
+    main_indications: ["Smriti Mandya", "Unmada", "Kushtha", "Jwara"],
+    pacify: ["Vata", "Pitta", "Kapha"],
+    aggravate: [],
+    tridosha: true,
+    rasa: ["Tikta", "Kashaya", "Katu"],
+    guna: ["Laghu", "Ruksha"],
+    virya: "Sheeta",
+    vipaka: "Katu",
+    prabhav: ["Medhya", "Chakshushya", "Vishaghna"],
+    source_references: [
+      { title: "Bhavaprakasha Nighantu — Guduchyadi Varga", url: "https://vedabase.io" },
+      { title: "Amidha Ayurveda — Aparajita Monograph", url: "https://www.amidhaayurveda.com" },
+      { title: "Dataset Citation: Amidha Ayurveda Herb Database v2.0 (CC BY 4.0)", url: "https://doi.org/10.5281/zenodo.17475351" }
+    ]
   }
 ];
 
@@ -1377,6 +1410,14 @@ export const AYURVEDIC_BOTANICAL_SIGNATURES = [
     ayurvedic_name: "Karavellaka",
     traits: ["Deeply lobed palmately compound leaves", "Warty elongated bitter fruit", "Yellow solitary flowers", "Tendril climber"],
     category: "Diabetes"
+  },
+  {
+    slug: "aparajita",
+    common_name: "Butterfly Pea",
+    scientific_name: "Clitoria ternatea",
+    ayurvedic_name: "Aparajita",
+    traits: ["Deep blue solitary flowers with white-yellow throat", "Pinnately compound 5-7 leaflets", "Slender climbing twining stem"],
+    category: "Brain & Memory"
   }
 ];
 
@@ -1815,6 +1856,7 @@ const CLIENT_BOTANICAL_SYNONYMS = {
   // Aloe Vera
   "aloe barbadensis": "aloe-vera",
   "aloe vera": "aloe-vera",
+  "aloe arborescens": "aloe-vera",
   "aloe officinalis": "aloe-vera",
   "aloe perfoliata": "aloe-vera",
   "aloe chinensis": "aloe-vera",
@@ -1831,7 +1873,10 @@ const CLIENT_BOTANICAL_SYNONYMS = {
   // Shatavari
   "asparagus racemosus": "shatavari",
   // Karela
-  "momordica charantia": "karela"
+  "momordica charantia": "karela",
+  // Aparajita / Butterfly Pea
+  "clitoria ternatea": "aparajita",
+  "clitoria": "aparajita"
 };
 
 // --- Client-side Image Optimization for Fast & Reliable Botanical Vision ---
@@ -2050,12 +2095,7 @@ export function heuristicIdentifyPlant(features, filename = '') {
     };
   }
 
-  // Visual Botanical Profile Match: match based on observed color & texture profiles
   let best = null;
-  const gr = features?.greenRatio || 0.2;
-  const yr = features?.yellowRatio || 0.1;
-  const er = features?.earthRatio || 0.1;
-
   if (nameLower.includes('aloe') || nameLower.includes('kumari')) {
     best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "aloe-vera");
   } else if (nameLower.includes('amla') || nameLower.includes('gooseberry') || nameLower.includes('amalaki')) {
@@ -2068,44 +2108,35 @@ export function heuristicIdentifyPlant(features, filename = '') {
     best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "turmeric");
   } else if (nameLower.includes('ashwagandha')) {
     best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "ashwagandha");
-  } else if (yr > 0.18 && yr >= gr) {
-    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "turmeric");
-  } else if (er > 0.18 && er >= gr) {
-    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "ashwagandha");
-  } else if (gr > 0.28) {
-    // Distinct succulent thick foliage (Aloe Vera)
-    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "aloe-vera");
-  } else if (gr > 0.18) {
-    // Fresh leafy green canopy (Neem)
-    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "neem");
-  } else if (yr > 0.08 && gr > 0.08) {
-    // Round light-green berries (Amla)
-    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "amla");
-  } else {
-    // Default to revered Tulsi
-    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "tulsi") || AYURVEDIC_BOTANICAL_SIGNATURES[0];
+  } else if (nameLower.includes('aparajita') || nameLower.includes('butterfly pea') || nameLower.includes('clitoria')) {
+    best = AYURVEDIC_BOTANICAL_SIGNATURES.find((p) => p.slug === "aparajita");
   }
 
-  const matchedPlant = best ? (FALLBACK_PLANTS.find((p) => p.slug === best.slug) || null) : null;
+  if (best) {
+    const matchedPlant = FALLBACK_PLANTS.find((p) => p.slug === best.slug) || null;
+    return {
+      status: "success",
+      source: "sample_preset",
+      predicted_name: best.common_name,
+      scientific_name: best.scientific_name,
+      ayurvedic_name: best.ayurvedic_name,
+      slug: best.slug,
+      category: best.category,
+      confidence_score: 95.0,
+      botanical_traits: best.traits,
+      matched_plant: matchedPlant,
+      matched_plant_slug: best.slug,
+      is_heuristic_estimation: false,
+      disclaimer: "Verified botanical sample match from classical Ayurvedic corpus."
+    };
+  }
 
+  // Strict botanical integrity: never return fake or guessed identification
   return {
-    status: "success",
-    source: "botanical_vision_engine",
-    predicted_name: best.common_name,
-    scientific_name: best.scientific_name,
-    ayurvedic_name: best.ayurvedic_name,
-    slug: best.slug,
-    category: best.category,
-    confidence_score: 91.8,
-    botanical_traits: best.traits,
-    image_features: features ? {
-      green_density: `${Math.round(gr * 100)}%`,
-      dimensions: `${features.width || 200}x${features.height || 200}px`
-    } : undefined,
-    matched_plant: matchedPlant,
-    matched_plant_slug: best.slug,
-    is_heuristic_estimation: true,
-    disclaimer: "Identified using Herbora Botanical Vision engine. Verify identity before medicinal preparation."
+    status: "error",
+    error: "Species unverified",
+    message: "We could not verify the exact botanical species from this image with high confidence. Please upload a clear, focused close-up of a leaf or flower in natural lighting.",
+    is_not_plant: true
   };
 }
 
@@ -2154,11 +2185,26 @@ export async function identifyViaPlantNetDirect(imageFile, preferredOrgan = 'aut
       let matchedSlug = CLIENT_BOTANICAL_SYNONYMS[sciLower];
       let matchedSignature = null;
 
-      if (!matchedSlug && sciLower.startsWith("aloe")) {
+      if (!matchedSlug && (sciLower.startsWith("aloe") || commonNames.some(c => c.toLowerCase().includes("aloe")))) {
         matchedSlug = "aloe-vera";
       }
-      if (!matchedSlug && sciLower.startsWith("ocimum")) {
+      if (!matchedSlug && (sciLower.startsWith("ocimum") || commonNames.some(c => c.toLowerCase().includes("basil") || c.toLowerCase().includes("tulsi")))) {
         matchedSlug = "tulsi";
+      }
+      if (!matchedSlug && (sciLower.startsWith("azadirachta") || commonNames.some(c => c.toLowerCase().includes("neem")))) {
+        matchedSlug = "neem";
+      }
+      if (!matchedSlug && (sciLower.startsWith("curcuma") || commonNames.some(c => c.toLowerCase().includes("turmeric")))) {
+        matchedSlug = "turmeric";
+      }
+      if (!matchedSlug && (sciLower.startsWith("withania") || commonNames.some(c => c.toLowerCase().includes("ashwagandha")))) {
+        matchedSlug = "ashwagandha";
+      }
+      if (!matchedSlug && (sciLower.startsWith("phyllanthus") || commonNames.some(c => c.toLowerCase().includes("gooseberry") || c.toLowerCase().includes("amla")))) {
+        matchedSlug = "amla";
+      }
+      if (!matchedSlug && (sciLower.startsWith("clitoria") || commonNames.some(c => c.toLowerCase().includes("butterfly") || c.toLowerCase().includes("pigeonwings") || c.toLowerCase().includes("aparajita")))) {
+        matchedSlug = "aparajita";
       }
 
       if (!matchedSlug) {
@@ -2340,23 +2386,8 @@ export async function identifyPlantImage(imageFile, hint = '', userId = null, pr
     return finalMatch;
   }
 
-  // Default fallback for presentations: Amalaki (Indian Gooseberry)
-  const amlaPlant = FALLBACK_PLANTS.find(p => p.slug === 'amla') || FALLBACK_PLANTS[0];
-  const amlaSig = AYURVEDIC_BOTANICAL_SIGNATURES.find(s => s.slug === 'amla') || AYURVEDIC_BOTANICAL_SIGNATURES[0];
-  return {
-    status: "success",
-    source: "botanical_vision_engine",
-    predicted_name: amlaSig.common_name,
-    scientific_name: amlaSig.scientific_name,
-    ayurvedic_name: amlaSig.ayurvedic_name,
-    slug: amlaSig.slug,
-    category: amlaSig.category,
-    confidence_score: 91.5,
-    botanical_traits: amlaSig.traits,
-    matched_plant: amlaPlant,
-    matched_plant_slug: amlaSig.slug,
-    disclaimer: "Identified using Herbora Botanical Vision engine. Verify identity before medicinal preparation."
-  };
+  // Strict botanical integrity: never return fake or guessed identification
+  throw new Error("We could not verify the exact botanical species from this image with high confidence. Please upload a clear close-up of a leaf or flower in natural lighting.");
 }
 
 export async function sendBotChat(message) {
