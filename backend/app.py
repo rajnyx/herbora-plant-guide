@@ -361,4 +361,4 @@ if os.getenv("VERCEL") is None or os.getenv("RUN_DB_INIT_ON_STARTUP", "false").l
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     print(f"Herbora Backend starting on http://127.0.0.1:{port}")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
